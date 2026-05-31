@@ -1,0 +1,26 @@
+title: "Building a Production RAG System with LlamaIndex"
+description: "A deep-dive blog series for software engineers — from a single document to 10 million, from POC to production."
+url: "https://dhanush-ctrl-ai.github.io"
+baseurl: "/llamaindex-rag-blog-series"
+
+theme: minima
+
+author:
+  name: "dhanush-ctrl-ai"
+  url: "https://github.com/dhanush-ctrl-ai"
+
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
