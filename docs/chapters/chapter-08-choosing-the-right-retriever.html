@@ -343,6 +343,20 @@ for n in hybrid.retrieve(query):
 
 <p>In Chapter 9 we zoom out from a single query to the ingestion system at scale — what breaks when you have 10 million documents, daily updates, and parallel workers, and how LlamaIndex's architecture handles each failure mode.</p>
 
+<h2>Day One vs Production</h2>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
+<tr><td>Retriever</td><td><code>VectorIndexRetriever</code>, top_k=2</td><td><code>QueryFusionRetriever</code>, top_k=10</td></tr>
+<tr><td>Search type</td><td>Semantic only</td><td>Hybrid: vector + BM25</td></tr>
+<tr><td>Query rewriting</td><td>None</td><td>LLM generates 4 variants</td></tr>
+<tr><td>Fusion</td><td>None</td><td>Reciprocal Rank Fusion</td></tr>
+<tr><td>Hierarchical</td><td>Flat chunks</td><td><code>AutoMergingRetriever</code></td></tr>
+<tr><td>Index type</td><td><code>VectorStoreIndex</code> only</td><td>Multiple indexes per domain</td></tr>
+<tr><td>Routing</td><td>None</td><td><code>RouterRetriever</code> for mixed corpora</td></tr>
+<tr><td>Latency</td><td>Fast, single retrieval</td><td>Medium — parallel async retrieval</td></tr>
+</tbody></table>
+
+
   </div>
   <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-07-the-query-engine-from-question-to-answer.html"><div class="nav-dir">← Previous</div>The Query Engine — From Question to Answer</a><a class="ch-nav-btn ch-nav-next" href="chapter-09-scaling-ingestion-to-10-million-documents.html"><div class="nav-dir">Next →</div>Scaling Ingestion to 10 Million Documents</a></nav>
 </main>

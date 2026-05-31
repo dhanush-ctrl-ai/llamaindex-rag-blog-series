@@ -296,3 +296,16 @@ The weekly manual audit catches silent failures that metrics miss — the cases 
 ## What's next
 
 In the final chapter, Chapter 11, we add agents — the ability for LlamaIndex to answer multi-step questions that require multiple retrievals, tool calls, and reasoning steps. When a single query-and-synthesize is not enough, agents take over.
+
+## Day One vs Production
+
+| Concern | Day One | Production |
+|---|---|---|
+| Handler | `LlamaDebugHandler` — prints to stdout | `StructuredLogHandler` → JSON → Datadog / Grafana |
+| Token tracking | None | `TokenCountingHandler` on every query |
+| Latency tracking | Read from debug trace manually | Emit `retrieve_ms` + `synthesize_ms` as metrics |
+| Retrieval audit | Inspect `response.source_nodes` manually | Log `top_score`, `bottom_score`, `num_nodes` per query |
+| Error tracking | Exception stack trace | Structured error log with query context |
+| Sampling | All queries | 100% logging + sampled deep traces |
+| Feedback loop | None | Thumbs up/down → labelled eval set |
+

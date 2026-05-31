@@ -345,6 +345,19 @@ print(f&quot;  Embed:      {counter.total_embedding_token_count} tokens&quot;)</
 
 <p>In the final chapter, Chapter 11, we add agents — the ability for LlamaIndex to answer multi-step questions that require multiple retrievals, tool calls, and reasoning steps. When a single query-and-synthesize is not enough, agents take over.</p>
 
+<h2>Day One vs Production</h2>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
+<tr><td>Handler</td><td><code>LlamaDebugHandler</code> — prints to stdout</td><td><code>StructuredLogHandler</code> → JSON → Datadog / Grafana</td></tr>
+<tr><td>Token tracking</td><td>None</td><td><code>TokenCountingHandler</code> on every query</td></tr>
+<tr><td>Latency tracking</td><td>Read from debug trace manually</td><td>Emit <code>retrieve_ms</code> + <code>synthesize_ms</code> as metrics</td></tr>
+<tr><td>Retrieval audit</td><td>Inspect <code>response.source_nodes</code> manually</td><td>Log <code>top_score</code>, <code>bottom_score</code>, <code>num_nodes</code> per query</td></tr>
+<tr><td>Error tracking</td><td>Exception stack trace</td><td>Structured error log with query context</td></tr>
+<tr><td>Sampling</td><td>All queries</td><td>100% logging + sampled deep traces</td></tr>
+<tr><td>Feedback loop</td><td>None</td><td>Thumbs up/down → labelled eval set</td></tr>
+</tbody></table>
+
+
   </div>
   <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-09-scaling-ingestion-to-10-million-documents.html"><div class="nav-dir">← Previous</div>Scaling Ingestion to 10 Million Documents</a><a class="ch-nav-btn ch-nav-next" href="chapter-11-agents-when-one-retrieval-is-not-enough.html"><div class="nav-dir">Next →</div>Agents — When One Retrieval Is Not Enough</a></nav>
 </main>

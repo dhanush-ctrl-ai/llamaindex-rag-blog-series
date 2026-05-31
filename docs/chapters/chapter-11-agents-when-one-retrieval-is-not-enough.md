@@ -311,3 +311,31 @@ The system handles 10 million documents (Chapter 9), searches them semantically 
 The next areas to explore from here: **evaluation** (Ragas, DeepEval — measure retrieval precision and answer faithfulness automatically), **fine-tuning your embed model** on your domain's vocabulary, and **structured outputs** (getting the LLM to return JSON instead of prose for downstream processing).
 
 The code for every chapter is in the GitHub repository. Each chapter's POC section runs independently — start with Chapter 1 and build up, or jump to the chapter that solves your current production problem.
+
+## Day One vs Production
+
+| Concern | Day One | Production |
+|---|---|---|
+| Agent type | `ReActAgent` with `verbose=True` | `ReActAgent` with structured logging |
+| Tools | 1–2 `QueryEngineTool` wrappers | Multiple tools: RAG + `FunctionTool` for APIs |
+| Memory | Default `ChatMemoryBuffer` | `ChatSummaryMemoryBuffer` with token limit |
+| max_iterations | 10 (default) | 5–8 (tighter budget) |
+| Async | Sync `.chat()` | Async `.achat()` for concurrent sessions |
+| Error handling | Exception propagates | Catch `MaxIterationsError`, fallback to QueryEngine |
+| Cost control | Unbounded | Gate on query complexity — simple → QueryEngine |
+| Observability | `verbose=True` print statements | `CallbackManager` with structured log handler |
+
+## What's next
+
+This is the final chapter of the series. You have built the full system — from reading a single `.txt` file in Chapter 1 to a production-scale, observable, agent-powered RAG system here in Chapter 11.
+
+The natural next steps from here:
+
+**Evaluation** — Use [Ragas](https://github.com/explodinggradients/ragas) or [DeepEval](https://github.com/confident-ai/deepeval) to measure retrieval precision and answer faithfulness automatically. Build a labelled eval set from engineer feedback (Chapter 10's thumbs up/down).
+
+**Embed model fine-tuning** — Fine-tune `BAAI/bge-base` on your domain's vocabulary using LlamaIndex's `EmbeddingAdapterFinetuneEngine`. A fine-tuned model on your company's specific terminology consistently outperforms the base model by 5–15% on retrieval precision.
+
+**Structured outputs** — Use `StructuredPredictor` to get JSON back instead of prose — useful when the RAG system feeds a downstream API or UI component that needs machine-readable output.
+
+The full code for every chapter lives in the [GitHub repository](https://github.com/dhanush-ctrl-ai/llamaindex-rag-blog-series). Each chapter's POC section runs independently.
+

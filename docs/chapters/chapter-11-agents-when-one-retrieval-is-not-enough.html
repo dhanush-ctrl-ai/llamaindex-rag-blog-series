@@ -332,6 +332,34 @@ print(f&quot;\nFinal: {final.response}&quot;)</code></pre>
 
 <p>The code for every chapter is in the GitHub repository. Each chapter's POC section runs independently — start with Chapter 1 and build up, or jump to the chapter that solves your current production problem.</p>
 
+<h2>Day One vs Production</h2>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
+<tr><td>Agent type</td><td><code>ReActAgent</code> with <code>verbose=True</code></td><td><code>ReActAgent</code> with structured logging</td></tr>
+<tr><td>Tools</td><td>1–2 <code>QueryEngineTool</code> wrappers</td><td>Multiple tools: RAG + <code>FunctionTool</code> for APIs</td></tr>
+<tr><td>Memory</td><td>Default <code>ChatMemoryBuffer</code></td><td><code>ChatSummaryMemoryBuffer</code> with token limit</td></tr>
+<tr><td>max_iterations</td><td>10 (default)</td><td>5–8 (tighter budget)</td></tr>
+<tr><td>Async</td><td>Sync <code>.chat()</code></td><td>Async <code>.achat()</code> for concurrent sessions</td></tr>
+<tr><td>Error handling</td><td>Exception propagates</td><td>Catch <code>MaxIterationsError</code>, fallback to QueryEngine</td></tr>
+<tr><td>Cost control</td><td>Unbounded</td><td>Gate on query complexity — simple → QueryEngine</td></tr>
+<tr><td>Observability</td><td><code>verbose=True</code> print statements</td><td><code>CallbackManager</code> with structured log handler</td></tr>
+</tbody></table>
+
+<h2>What's next</h2>
+
+<p>This is the final chapter of the series. You have built the full system — from reading a single <code>.txt</code> file in Chapter 1 to a production-scale, observable, agent-powered RAG system here in Chapter 11.</p>
+
+<p>The natural next steps from here:</p>
+
+<p><strong>Evaluation</strong> — Use <a href="https://github.com/explodinggradients/ragas">Ragas</a> or <a href="https://github.com/confident-ai/deepeval">DeepEval</a> to measure retrieval precision and answer faithfulness automatically. Build a labelled eval set from engineer feedback (Chapter 10's thumbs up/down).</p>
+
+<p><strong>Embed model fine-tuning</strong> — Fine-tune <code>BAAI/bge-base</code> on your domain's vocabulary using LlamaIndex's <code>EmbeddingAdapterFinetuneEngine</code>. A fine-tuned model on your company's specific terminology consistently outperforms the base model by 5–15% on retrieval precision.</p>
+
+<p><strong>Structured outputs</strong> — Use <code>StructuredPredictor</code> to get JSON back instead of prose — useful when the RAG system feeds a downstream API or UI component that needs machine-readable output.</p>
+
+<p>The full code for every chapter lives in the <a href="https://github.com/dhanush-ctrl-ai/llamaindex-rag-blog-series">GitHub repository</a>. Each chapter's POC section runs independently.</p>
+
+
   </div>
   <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-10-observability-seeing-inside-the-black-box.html"><div class="nav-dir">← Previous</div>Observability — Seeing Inside the Black Box</a></nav>
 </main>

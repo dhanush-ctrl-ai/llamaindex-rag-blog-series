@@ -350,3 +350,17 @@ Running this on your actual data before committing to a retriever strategy takes
 ## What's next
 
 In Chapter 9 we zoom out from a single query to the ingestion system at scale — what breaks when you have 10 million documents, daily updates, and parallel workers, and how LlamaIndex's architecture handles each failure mode.
+
+## Day One vs Production
+
+| Concern | Day One | Production |
+|---|---|---|
+| Retriever | `VectorIndexRetriever`, top_k=2 | `QueryFusionRetriever`, top_k=10 |
+| Search type | Semantic only | Hybrid: vector + BM25 |
+| Query rewriting | None | LLM generates 4 variants |
+| Fusion | None | Reciprocal Rank Fusion |
+| Hierarchical | Flat chunks | `AutoMergingRetriever` |
+| Index type | `VectorStoreIndex` only | Multiple indexes per domain |
+| Routing | None | `RouterRetriever` for mixed corpora |
+| Latency | Fast, single retrieval | Medium — parallel async retrieval |
+
