@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch02: How LlamaIndex Reads Your Documents — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+
+/* LAYOUT */
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+
+/* CHAPTER HEADER */
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.ch-intro{font-size:1.05rem;color:var(--muted);
+  border-left:3px solid var(--green);padding-left:16px;
+  margin-bottom:0;line-height:1.7}
+
+/* CONTENT TYPOGRAPHY */
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px;color:var(--text)}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content em{font-style:italic}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);border-left:4px solid var(--green);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content blockquote strong{color:var(--text)}
+
+/* TABLES */
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;
+  border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);
+  vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+
+/* CODE */
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;
+  box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+
+/* DIAGRAM WRAPPER */
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* NAV FOOTER */
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);
+  box-shadow:3px 3px 0 var(--text)}
+.ch-nav-btn .nav-dir{font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.ch-nav-next{text-align:right}
+
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}
+}
+</style>
+
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 02</div>
+    <h1>Chapter 2: How LlamaIndex Reads Your Documents</h1>
+  </header>
+  <div class="content">
+
+<h1>Chapter 2: How LlamaIndex Reads Your Documents</h1>
+
+<blockquote><p><strong>Usecase:</strong> Your 50,000-page company wiki spans PDFs, Confluence pages, Notion docs, and plain text files. Before you can search any of it, LlamaIndex needs to read it and put it into a standard shape.</p></blockquote>
+
+<hr>
+
+<h2>The problem this chapter solves</h2>
+
+<p>Imagine you have five different document types: a PDF design spec, a Markdown README, a Notion page, a Slack thread export, and a CSV of support tickets. Each one is a completely different format.</p>
+
+<p>Your search and retrieval system does not care about format. It cares about <strong>text and metadata</strong>. Before any chunking, embedding, or indexing can happen, every document — regardless of source — needs to be converted into the same internal structure.</p>
+
+<p>This is what the document layer does. It is the intake desk of the entire pipeline.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Document Loading Funnel</title><rect x="32" y="29" width="100" height="34" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="28" width="100" height="34" rx="6" fill="#f9f9f9" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="45.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">PDF</text><line x1="132" y1="45" x2="220" y2="110" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="206.8,107.7 220,110 213.9,98.0" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="32" y="72" width="100" height="34" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="71" width="100" height="34" rx="6" fill="#f9f9f9" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="88.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Markdown</text><line x1="132" y1="88" x2="220" y2="110" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="206.9,112.9 220,110 209.8,101.3" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="32" y="115" width="100" height="34" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="114" width="100" height="34" rx="6" fill="#f9f9f9" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="131.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Notion</text><line x1="132" y1="131" x2="220" y2="110" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="209.7,118.6 220,110 206.9,106.9" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="32" y="158" width="100" height="34" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="157" width="100" height="34" rx="6" fill="#f9f9f9" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="174.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">CSV</text><line x1="132" y1="174" x2="220" y2="110" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="213.8,121.9 220,110 206.8,112.2" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="232" y="81" width="160" height="60" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="230" y="80" width="160" height="60" rx="6" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="310" y="101.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">SimpleDirectoryReader</text><text x="310" y="119.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">or specific Loaders</text><line x1="392" y1="110" x2="480" y2="110" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="468.0,116.0 480,110 468.0,104.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="492" y="71" width="160" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="490" y="70" width="160" height="80" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570" y="101.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Document Object id_,</text><text x="570" y="119.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">text metadata</text></svg></div></p>
+
+<p>Every format goes in. One consistent shape comes out. That shape is the <code>Document</code> object.</p>
+
+<hr>
+
+<h2>Why a standard shape matters</h2>
+
+<p>If every component downstream — the chunker, the embedder, the retriever — had to handle PDFs differently from Markdown, the codebase would be a mess of <code>if format == 'pdf'</code> branches. Instead, LlamaIndex uses a class hierarchy where every piece of text, regardless of where it came from, becomes a <code>TextNode</code>. The chunker does not know it is working on a PDF. The embedder does not know it is working on a Notion page. They only see nodes.</p>
+
+<p>This is the same principle as USB-C: one port, every device. The <code>TextNode</code> is the USB-C port of LlamaIndex.</p>
+
+<hr>
+
+<h2>The class hierarchy</h2>
+
+<p>There are four classes that build on each other. Each layer adds specific fields without removing anything from the parent.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 460" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Class Hierarchy</title><rect x="102" y="81" width="480" height="80" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="100" y="80" width="480" height="80" rx="8" fill="#f0f0f0" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="112" y="96.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="15" font-weight="700" fill="#888" dominant-baseline="middle">BaseComponent</text><text x="124" y="114.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ class_name() str</text><text x="124" y="129.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ to_dict() / from_dict()</text><text x="124" y="144.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ to_json() / from_json()</text><rect x="102" y="186" width="480" height="80" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="100" y="185" width="480" height="80" rx="8" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="112" y="201.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="15" font-weight="700" fill="#9b59b6" dominant-baseline="middle">BaseNode</text><text x="124" y="219.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ id_ : str (UUID)</text><text x="124" y="234.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ embedding : List[float] | None</text><text x="124" y="249.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ metadata : Dict[str, Any]</text><rect x="102" y="321" width="480" height="80" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="100" y="320" width="480" height="80" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="112" y="336.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="15" font-weight="700" fill="#2980b9" dominant-baseline="middle">TextNode</text><text x="124" y="354.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ text : str</text><text x="124" y="369.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ start_char_idx : int | None</text><text x="124" y="384.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ end_char_idx : int | None</text><rect x="102" y="431" width="480" height="80" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="100" y="430" width="480" height="80" rx="8" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="112" y="446.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="15" font-weight="700" fill="#27ae60" dominant-baseline="middle">Document</text><text x="124" y="464.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ doc_id : str (alias for id_)</text><text x="124" y="479.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ to_langchain_format()</text><text x="124" y="494.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#444" dominant-baseline="middle">+ from_langchain_format()</text><line x1="70" y1="160" x2="70" y2="185" stroke="#555" stroke-width="1"  stroke-linecap="round"/><polyline points="64.0,173.0 70,185 76.0,173.0" stroke="#555" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="30" y="172" font-family:'Caveat',cursive;font-weight:600; font-size="10" fill="#888" text-anchor="middle" transform="rotate(-90,30,172)">inherits</text><line x1="70" y1="265" x2="70" y2="320" stroke="#555" stroke-width="1"  stroke-linecap="round"/><polyline points="64.0,308.0 70,320 76.0,308.0" stroke="#555" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="30" y="292" font-family:'Caveat',cursive;font-weight:600; font-size="10" fill="#888" text-anchor="middle" transform="rotate(-90,30,292)">inherits</text><line x1="70" y1="400" x2="70" y2="430" stroke="#555" stroke-width="1"  stroke-linecap="round"/><polyline points="64.0,418.0 70,430 76.0,418.0" stroke="#555" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="30" y="415" font-family:'Caveat',cursive;font-weight:600; font-size="10" fill="#888" text-anchor="middle" transform="rotate(-90,30,415)">inherits</text></svg></div></p>
+
+<p>Let us walk through each layer and understand <em>why</em> each field exists.</p>
+
+<hr>
+
+<h2>Layer 1: <code>BaseComponent</code> — the serialization contract</h2>
+
+<p>Every single object in LlamaIndex inherits from <code>BaseComponent</code>. It is built on Pydantic and adds one critical capability: the ability to save and reload any object reliably.</p>
+
+<pre><code class="language-python"># BaseComponent gives everything these powers:
+pipeline.persist(&quot;./storage&quot;)       # save to disk
+pipeline = IngestionPipeline.from_persist_dir(&quot;./storage&quot;)  # reload
+
+index.storage_context.persist(&quot;./index_storage&quot;)  # save index
+index = load_index_from_storage(storage_context)  # reload index</code></pre>
+
+<p>Why Pydantic? Because Pydantic validates field types at assignment time. If you accidentally put a string where a list of floats is expected for an embedding, you get an immediate error at the assignment line — not a mysterious crash three steps later in the similarity search.</p>
+
+<hr>
+
+<h2>Layer 2: <code>BaseNode</code> — identity, memory, and graph edges</h2>
+
+<p>This is the most important layer. Everything that gets stored, searched, or retrieved is a <code>BaseNode</code>.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>BaseNode Fields</title><rect x="277" y="161" width="130" height="50" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="275" y="160" width="130" height="50" rx="6" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340" y="185.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">BaseNode</text><rect x="32" y="34" width="140" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="33" width="140" height="54" rx="6" fill="#fef9e7" stroke="#f39c12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="100" y="60.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">id_ Unique UUID</text><line x1="340" y1="185" x2="100" y2="60" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="113.4,60.2 100,60 107.9,70.9" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="192" y="34" width="140" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="190" y="33" width="140" height="54" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="260" y="51.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">embedding</text><text x="260" y="68.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">List[float]|None</text><line x1="340" y1="185" x2="260" y2="60" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="271.5,66.9 260,60 261.4,73.3" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="392" y="34" width="140" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="390" y="33" width="140" height="54" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="460" y="51.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">metadata</text><text x="460" y="68.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Dict[str,Any]</text><line x1="340" y1="185" x2="460" y2="60" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="456.0,72.8 460,60 447.4,64.5" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="32" y="284" width="140" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="283" width="140" height="54" rx="6" fill="#fff" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="100" y="301.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#888" dominant-baseline="middle">excluded_embed</text><text x="100" y="318.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#888" dominant-baseline="middle">_metadata_keys</text><line x1="340" y1="185" x2="100" y2="310" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="107.9,299.1 100,310 113.4,309.8" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="192" y="284" width="140" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="190" y="283" width="140" height="54" rx="6" fill="#fff" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="260" y="301.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#888" dominant-baseline="middle">excluded_llm</text><text x="260" y="318.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#888" dominant-baseline="middle">_metadata_keys</text><line x1="340" y1="185" x2="260" y2="310" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="261.4,296.7 260,310 271.5,303.1" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="392" y="284" width="140" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="390" y="283" width="140" height="54" rx="6" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="460" y="301.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">relationships</text><text x="460" y="318.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">SOURCE,PREV,NEXT</text><line x1="340" y1="185" x2="460" y2="310" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="447.4,305.5 460,310 456.0,297.2" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></p>
+
+<h3><code>id_</code> — the primary key</h3>
+
+<p>Every node gets a UUID automatically. This is how the <code>DocStore</code>, <code>VectorStore</code>, and <code>IndexStore</code> reference each other without duplication. When the retriever finds a relevant embedding in the <code>VectorStore</code>, it looks up the full node content in the <code>DocStore</code> using this <code>id_</code>.</p>
+
+<h3><code>embedding</code> — populated lazily</h3>
+
+<p>The embedding field starts as <code>None</code>. It only gets populated when the embed model transformation runs during ingestion. This lazy design is intentional — you can create and manipulate nodes without triggering expensive API calls. The embedding only materialises when you explicitly run the embed step.</p>
+
+<h3><code>metadata</code> — the sticky note</h3>
+
+<p>This is a flat dictionary of key-value pairs. LlamaIndex auto-populates several keys when loading files:</p>
+
+<pre><code class="language-python"># Auto-populated by SimpleDirectoryReader
+metadata = {
+    &quot;file_path&quot;:          &quot;/docs/policy.txt&quot;,
+    &quot;file_name&quot;:          &quot;policy.txt&quot;,
+    &quot;file_size&quot;:          4821,
+    &quot;creation_date&quot;:      &quot;2024-06-10&quot;,
+    &quot;last_modified_date&quot;: &quot;2024-06-12&quot;
+}</code></pre>
+
+<p>You can add your own keys:</p>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader
+
+def add_department_metadata(filename):
+    return {&quot;department&quot;: &quot;engineering&quot;, &quot;confidential&quot;: False}
+
+reader = SimpleDirectoryReader(
+    &quot;./docs&quot;,
+    file_metadata=add_department_metadata
+)
+documents = reader.load_data()
+# Now every document has department + confidential in metadata</code></pre>
+
+<h3><code>excluded_embed_metadata_keys</code> and <code>excluded_llm_metadata_keys</code> — two audiences, one dict</h3>
+
+<p>This is a clever design that solves a real problem.</p>
+
+<p>Your metadata serves two different consumers: the <strong>embed model</strong> (which creates the vector) and the <strong>LLM</strong> (which reads it in the prompt). These two audiences have different needs.</p>
+
+<p>The embed model should not know about <code>file_path</code> — it would pollute the semantic vector with filesystem noise. "Policy.txt" being in <code>/home/john/docs/</code> vs <code>/var/app/docs/</code> should not change what the text <em>means</em>.</p>
+
+<p>The LLM should know about <code>file_name</code> and <code>creation_date</code> so it can include citations like <em>"According to policy.txt (updated June 2024)..."</em></p>
+
+<pre><code class="language-python">node.excluded_embed_metadata_keys = [&quot;file_path&quot;, &quot;file_size&quot;, &quot;creation_date&quot;]
+# → These keys are stripped before computing the embedding
+
+node.excluded_llm_metadata_keys = [&quot;file_size&quot;]
+# → file_size is stripped from the LLM prompt (irrelevant to the answer)
+# → file_path, file_name, creation_date remain visible to the LLM</code></pre>
+
+<p>When <code>get_content(MetadataMode.EMBED)</code> is called, the result looks like:</p>
+
+<pre><code class="language-">file_name: policy.txt
+
+Our refund policy allows returns within 30 days...</code></pre>
+
+<p>When <code>get_content(MetadataMode.LLM)</code> is called, the result looks like:</p>
+
+<pre><code class="language-">file_name: policy.txt
+creation_date: 2024-06-10
+
+Our refund policy allows returns within 30 days...</code></pre>
+
+<p>Same node. Two different views of its content. One dict, two exclude lists.</p>
+
+<h3><code>relationships</code> — the graph</h3>
+
+<p>This is what turns a flat list of chunks into a navigable graph. The <code>relationships</code> dict maps a <code>NodeRelationship</code> enum value to a <code>RelatedNodeInfo</code> object (which holds the related node's <code>id_</code>).</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Node Relationships</title><rect x="262" y="24" width="160" height="54" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="260" y="23" width="160" height="54" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340" y="50.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Document id: doc-001</text><rect x="47" y="151" width="150" height="60" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="45" y="150" width="150" height="60" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="120" y="171.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">TextNode node-aaa</text><text x="120" y="188.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">chunk 1</text><line x1="120" y1="150" x2="340" y2="77" stroke="#2980b9" stroke-width="1" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="330.5,86.5 340,77 326.7,75.1" stroke="#2980b9" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="209.0" y="102.5" width="50" height="18" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="230.0" y="116.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">SOURCE</text><rect x="267" y="151" width="150" height="60" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="265" y="150" width="150" height="60" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340" y="171.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">TextNode node-bbb</text><text x="340" y="188.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">chunk 2</text><line x1="340" y1="150" x2="340" y2="77" stroke="#2980b9" stroke-width="1" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="346.0,89.0 340,77 334.0,89.0" stroke="#2980b9" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="319.0" y="102.5" width="50" height="18" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="340.0" y="116.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">SOURCE</text><rect x="487" y="151" width="150" height="60" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="485" y="150" width="150" height="60" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="560" y="171.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">TextNode node-ccc</text><text x="560" y="188.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">chunk 3</text><line x1="560" y1="150" x2="340" y2="77" stroke="#2980b9" stroke-width="1" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="353.3,75.1 340,77 349.5,86.5" stroke="#2980b9" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="429.0" y="102.5" width="50" height="18" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="450.0" y="116.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">SOURCE</text><line x1="195" y1="180" x2="265" y2="180" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polyline points="253.0,186.0 265,180 253.0,174.0" stroke="#27ae60" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="216.0" y="169.0" width="36" height="18" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="230.0" y="183.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">NEXT</text><line x1="415" y1="180" x2="485" y2="180" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polyline points="473.0,186.0 485,180 473.0,174.0" stroke="#27ae60" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="436.0" y="169.0" width="36" height="18" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="450.0" y="183.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">NEXT</text><line x1="265" y1="198" x2="195" y2="198" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polyline points="207.0,192.0 195,198 207.0,204.0" stroke="#888" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="216.0" y="187.0" width="36" height="18" rx="4" fill="white" stroke="#888" stroke-width="1"/><text x="230.0" y="201.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#888">PREV</text><line x1="485" y1="198" x2="415" y2="198" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polyline points="427.0,192.0 415,198 427.0,204.0" stroke="#888" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="436.0" y="187.0" width="36" height="18" rx="4" fill="white" stroke="#888" stroke-width="1"/><text x="450.0" y="201.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#888">PREV</text></svg></div></p>
+
+<p>There are five relationship types:</p>
+
+<table><thead><tr><th>Relationship</th><th>Direction</th><th>Used for</th></tr></thead><tbody>
+<tr><td><code>SOURCE</code></td><td>chunk → original document</td><td>Citation: "this came from policy.txt"</td></tr>
+<tr><td><code>PREVIOUS</code></td><td>chunk → preceding chunk</td><td>Context: what came before this chunk</td></tr>
+<tr><td><code>NEXT</code></td><td>chunk → following chunk</td><td>Context: what comes after this chunk</td></tr>
+<tr><td><code>PARENT</code></td><td>small chunk → larger chunk</td><td>Hierarchical chunking (Ch. 3)</td></tr>
+<tr><td><code>CHILD</code></td><td>large chunk → smaller chunk</td><td>Hierarchical chunking (Ch. 3)</td></tr>
+</tbody></table>
+
+<p>When you call <code>response.source_nodes</code> on a query response, you are walking the <code>SOURCE</code> relationship from each retrieved chunk back to its original document. That is how citations work.</p>
+
+<hr>
+
+<h2>Layer 3: <code>TextNode</code> — the actual content</h2>
+
+<p><code>TextNode</code> extends <code>BaseNode</code> and adds the text itself. This is what gets chunked, embedded, and retrieved.</p>
+
+<pre><code class="language-python"># What a TextNode looks like after chunking
+node = TextNode(
+    id_           = &quot;node-aaa-111&quot;,
+    text          = &quot;Our refund policy allows returns within 30 days...&quot;,
+    start_char_idx = 0,      # where this chunk starts in the original doc
+    end_char_idx   = 312,    # where it ends
+    mimetype      = &quot;text/plain&quot;,
+    metadata      = {&quot;file_name&quot;: &quot;policy.txt&quot;, ...},
+    relationships = {
+        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=&quot;doc-001&quot;),
+        NodeRelationship.NEXT:   RelatedNodeInfo(node_id=&quot;node-bbb-222&quot;),
+    }
+)</code></pre>
+
+<p><code>start_char_idx</code> and <code>end_char_idx</code> are more important than they look. They let you map retrieved chunks back to exact positions in the source document. This is how you build precise citation systems that say <em>"Answer found at paragraph 3 of page 7"</em> instead of just <em>"Answer found in policy.txt"</em>.</p>
+
+<p>The <code>get_content(metadata_mode)</code> method is what every downstream component calls to get the text it should work with:</p>
+
+<pre><code class="language-python"># What the EMBED model sees
+node.get_content(MetadataMode.EMBED)
+# → &quot;file_name: policy.txt\n\nOur refund policy allows returns...&quot;
+
+# What the LLM sees  
+node.get_content(MetadataMode.LLM)
+# → &quot;file_name: policy.txt\ncreation_date: 2024-06-10\n\nOur refund policy...&quot;
+
+# Raw text only
+node.get_content(MetadataMode.NONE)
+# → &quot;Our refund policy allows returns within 30 days...&quot;</code></pre>
+
+<hr>
+
+<h2>Layer 4: <code>Document</code> — the pre-chunking wrapper</h2>
+
+<p><code>Document</code> extends <code>TextNode</code> with almost no new fields. That is intentional.</p>
+
+<p>A <code>Document</code> represents a whole file before chunking. A <code>TextNode</code> represents a chunk after chunking. They have the same structure because after chunking, the system treats them identically — both are nodes in the graph, both live in stores, both have the same fields.</p>
+
+<p>The main additions in <code>Document</code>:</p>
+
+<pre><code class="language-python">doc.doc_id      # convenience alias for id_ — same UUID, friendlier name
+doc.text        # the full raw document text (before it gets split)</code></pre>
+
+<p>And interoperability methods for other frameworks:</p>
+
+<pre><code class="language-python"># Convert to LangChain format
+lc_doc = doc.to_langchain_format()
+
+# Convert from LangChain format  
+doc = Document.from_langchain_format(lc_doc)</code></pre>
+
+<hr>
+
+<h2>The POC: inspect what loading actually produces</h2>
+
+<p>Let us look at what you get when you load a real document. This is important to run before building anything else — understanding the shape of your data is step one.</p>
+
+<h3>Single document inspection</h3>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader
+
+# Load a single file
+documents = SimpleDirectoryReader(input_files=[&quot;./policy.txt&quot;]).load_data()
+doc = documents[0]
+
+# Inspect the Document object
+print(&quot;=== Document Fields ===&quot;)
+print(f&quot;doc_id:     {doc.doc_id}&quot;)
+print(f&quot;text[:100]: {doc.text[:100]}&quot;)
+print(f&quot;metadata:   {doc.metadata}&quot;)
+print(f&quot;embedding:  {doc.embedding}&quot;)  # None — not yet embedded
+
+# Output:
+# doc_id:     c8b563c2-d380-4b9a-867c-d7f3d38808cb
+# text[:100]: Our refund policy allows returns within 30 days of purchase.
+#             Items must be unused and in original packaging.
+# metadata:   {&#x27;file_path&#x27;: &#x27;./policy.txt&#x27;, &#x27;file_name&#x27;: &#x27;policy.txt&#x27;,
+#              &#x27;file_size&#x27;: 312, &#x27;creation_date&#x27;: &#x27;2024-06-10&#x27;,
+#              &#x27;last_modified_date&#x27;: &#x27;2024-06-12&#x27;}
+# embedding:  None</code></pre>
+
+<h3>Adding custom metadata</h3>
+
+<pre><code class="language-python"># You often want to add domain-specific metadata
+from llama_index.core import SimpleDirectoryReader
+
+def custom_metadata(filename: str) -&gt; dict:
+    # You can pull from a database, filename pattern, config file, etc.
+    metadata = {}
+    if &quot;hr&quot; in filename:
+        metadata[&quot;department&quot;] = &quot;HR&quot;
+        metadata[&quot;confidential&quot;] = True
+    elif &quot;engineering&quot; in filename:
+        metadata[&quot;department&quot;] = &quot;Engineering&quot;
+        metadata[&quot;confidential&quot;] = False
+    return metadata
+
+documents = SimpleDirectoryReader(
+    &quot;./docs&quot;,
+    file_metadata=custom_metadata
+).load_data()
+
+# Now every document has department + confidential fields
+for doc in documents:
+    print(doc.metadata)
+# → {&#x27;file_name&#x27;: &#x27;hr_policy.txt&#x27;, &#x27;department&#x27;: &#x27;HR&#x27;, &#x27;confidential&#x27;: True, ...}</code></pre>
+
+<h3>Controlling what the embed model and LLM see</h3>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader(&quot;./docs&quot;).load_data()
+
+for doc in documents:
+    # Do not let file_path or file_size pollute the semantic embedding
+    doc.excluded_embed_metadata_keys = [&quot;file_path&quot;, &quot;file_size&quot;, &quot;creation_date&quot;]
+    
+    # Do not clutter the LLM prompt with file_size
+    doc.excluded_llm_metadata_keys = [&quot;file_size&quot;, &quot;file_path&quot;]
+
+# Now build the index — these settings propagate to every chunk created from these docs
+index = VectorStoreIndex.from_documents(documents)</code></pre>
+
+<h3>Loading multiple formats</h3>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader
+
+# SimpleDirectoryReader auto-detects format by file extension
+# Supports: .txt, .pdf, .docx, .csv, .md, .html, .json, .ipynb, and more
+documents = SimpleDirectoryReader(
+    &quot;./docs&quot;,
+    recursive=True,         # include subdirectories
+    required_exts=[&quot;.pdf&quot;, &quot;.txt&quot;, &quot;.md&quot;],  # only these formats
+    exclude=[&quot;temp/&quot;, &quot;*.draft.md&quot;],        # skip these
+).load_data()
+
+print(f&quot;Loaded {len(documents)} documents&quot;)
+for doc in documents:
+    print(f&quot;  {doc.metadata[&#x27;file_name&#x27;]} — {len(doc.text)} chars&quot;)</code></pre>
+
+<hr>
+
+<h2>Scaling up: loading millions of documents</h2>
+
+<p>The POC loads everything synchronously into memory. At 50,000 documents, that has three problems:</p>
+
+<ol><li><strong>Memory</strong> — all text in RAM simultaneously</li><li><strong>Speed</strong> — sequential file reads, one at a time</li><li><strong>Reliability</strong> — one failed file crashes the whole load</li></ol>
+
+<p>Here is how loading changes at scale:</p>
+
+<h3>Problem 1: Loading from cloud storage instead of local disk</h3>
+
+<p>At production scale, documents live in S3, GCS, or Azure Blob — not a local folder.</p>
+
+<pre><code class="language-python"># S3 reader — same Document output, different source
+from llama_index.readers.s3 import S3Reader
+
+reader = S3Reader(
+    bucket=&quot;company-wiki-bucket&quot;,
+    prefix=&quot;engineering/&quot;,
+    aws_access_id=&quot;...&quot;,
+    aws_access_secret=&quot;...&quot;,
+)
+documents = reader.load_data()</code></pre>
+
+<p>Same <code>Document</code> shape. The rest of the pipeline does not change.</p>
+
+<h3>Problem 2: Async loading for speed</h3>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader
+
+reader = SimpleDirectoryReader(&quot;./docs&quot;)
+
+# Async load — does not block while waiting for file I/O
+documents = await reader.aload_data()</code></pre>
+
+<h3>Problem 3: Process documents in batches, not all at once</h3>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+reader = SimpleDirectoryReader(&quot;./docs&quot;)
+all_files = reader.input_files   # list of Path objects
+
+BATCH_SIZE = 100
+
+for i in range(0, len(all_files), BATCH_SIZE):
+    batch_files = all_files[i : i + BATCH_SIZE]
+    
+    batch_reader = SimpleDirectoryReader(input_files=batch_files)
+    batch_docs = batch_reader.load_data()
+    
+    # Insert this batch into the index
+    # The index persists between batches (covered in Ch. 5)
+    for doc in batch_docs:
+        index.insert(doc)
+    
+    print(f&quot;Processed batch {i // BATCH_SIZE + 1}, total docs: {i + len(batch_files)}&quot;)</code></pre>
+
+<h3>The full picture: Day One vs Production</h3>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Loading Day One vs Production</title><rect x="22" y="21" width="300" height="160" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="20" y="20" width="300" height="160" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="42.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="14" font-weight="700" fill="#1e8449" dominant-baseline="middle">Day One — Local</text><rect x="62" y="67" width="220" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="60" y="66" width="220" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="72.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Local File →</text><text x="170" y="88.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">SimpleDirectoryReader</text><rect x="62" y="105" width="220" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="60" y="104" width="220" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="118.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Synchronous load</text><rect x="62" y="143" width="220" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="60" y="142" width="220" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="156.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Documents in RAM</text><rect x="362" y="21" width="300" height="160" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="360" y="20" width="300" height="160" rx="10" fill="#fdebd0" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="42.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="14" font-weight="700" fill="#a04000" dominant-baseline="middle">Production — Cloud</text><rect x="402" y="67" width="220" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="400" y="66" width="220" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="80.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">S3/GCS + Async load</text><rect x="402" y="105" width="220" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="400" y="104" width="220" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="118.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Batched 100 docs/batch</text><rect x="402" y="143" width="220" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="400" y="142" width="220" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="156.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Persistent DocStore</text></svg></div></p>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
+<tr><td>Source</td><td>Local folder</td><td>S3 / GCS / Confluence / Notion APIs</td></tr>
+<tr><td>Loading</td><td>Synchronous</td><td>Async + parallel</td></tr>
+<tr><td>Volume</td><td>All at once</td><td>Batched, 100 docs per batch</td></tr>
+<tr><td>Metadata</td><td>Auto (filename, dates)</td><td>Custom enrichment (dept, access level)</td></tr>
+<tr><td>Storage</td><td>RAM</td><td>Persistent DocStore (Redis/Postgres)</td></tr>
+<tr><td>Error handling</td><td>Crash on bad file</td><td>Skip + log bad files, continue batch</td></tr>
+<tr><td>Deduplication</td><td>None</td><td>Hash-based (covered in Ch. 5)</td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>One thing to remember</h2>
+
+<p>Every document in LlamaIndex — whether it is a PDF page, a Slack message, a SQL row, or a YouTube transcript — ends up as a <code>TextNode</code> with the same fields: <code>id_</code>, <code>text</code>, <code>metadata</code>, <code>embedding</code>, <code>relationships</code>. That uniformity is what makes the entire downstream pipeline (chunking, embedding, retrieval) completely data-source-agnostic.</p>
+
+<p>The document layer is not the exciting part of RAG. But it is the foundation. Get this right — especially the metadata and the exclusion keys — and every downstream step benefits.</p>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In Chapter 3, we take these <code>Document</code> objects and cut them into searchable chunks. We will cover why you cannot embed a 100-page document as one unit, how the <code>SentenceSplitter</code> works internally (including the <code>chunk_overlap</code> trick), and how chunking builds the <code>PREV</code> / <code>NEXT</code> / <code>SOURCE</code> relationship graph we introduced in this chapter.</p>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-01-the-problem-with-llms-and-private-data.html"><div class="nav-dir">← Previous</div>The Problem with LLMs and Private Data</a><a class="ch-nav-btn ch-nav-next" href="../index.html"><div class="nav-dir">Next →</div>Coming soon</a></nav>
+</main>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch01: The Problem with LLMs and Private Data — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+
+/* LAYOUT */
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+
+/* CHAPTER HEADER */
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.ch-intro{font-size:1.05rem;color:var(--muted);
+  border-left:3px solid var(--green);padding-left:16px;
+  margin-bottom:0;line-height:1.7}
+
+/* CONTENT TYPOGRAPHY */
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px;color:var(--text)}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content em{font-style:italic}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);border-left:4px solid var(--green);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content blockquote strong{color:var(--text)}
+
+/* TABLES */
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;
+  border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);
+  vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+
+/* CODE */
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;
+  box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+
+/* DIAGRAM WRAPPER */
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* NAV FOOTER */
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);
+  box-shadow:3px 3px 0 var(--text)}
+.ch-nav-btn .nav-dir{font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.ch-nav-next{text-align:right}
+
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}
+}
+</style>
+
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 01</div>
+    <h1>Chapter 1: The Problem with LLMs and Private Data</h1>
+  </header>
+  <div class="content">
+
+<h1>Chapter 1: The Problem with LLMs and Private Data</h1>
+
+<blockquote><p><strong>Usecase:</strong> Your engineering team has a 50,000-page internal wiki. You want engineers to ask questions and get answers — without copy-pasting docs into ChatGPT.</p></blockquote>
+
+<hr>
+
+<h2>The moment every developer hits</h2>
+
+<p>You have built a chatbot. It is brilliant. It explains code, answers architecture questions, drafts emails.</p>
+
+<p>Then your manager asks: <em>"Can it answer questions about our internal deployment process?"</em></p>
+
+<p>You paste a few docs into the prompt. It works. You paste ten docs. Still works. You try to give it your entire wiki.</p>
+
+<p>It crashes. Context limit exceeded.</p>
+
+<p>You have just hit the core limitation of every Large Language Model in production: <strong>LLMs know a lot about the public internet, but they know nothing about your company.</strong></p>
+
+<hr>
+
+<h2>Why this happens — the knowledge gap</h2>
+
+<p>Every LLM is trained on a snapshot of public data — Wikipedia, GitHub, Stack Overflow, books, arXiv papers. That training ends at a cutoff date. After that, the model is frozen. It cannot learn new facts unless you retrain it.</p>
+
+<p>Your company's data is private, constantly changing, and was never in the training set. When you ask an LLM about your internal API design, it has two choices: say "I don't know", or make something up. Most models choose the second option. This is called <strong>hallucination</strong>.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>LLM Knowledge Gap</title><rect x="32" y="41" width="260" height="130" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="30" y="40" width="260" height="130" rx="10" fill="#f0e6ff" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="160" y="70.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="15" font-weight="700" fill="#6c3483" dominant-baseline="middle">LLM Knowledge</text><text x="160" y="95.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#7d3c98" dominant-baseline="middle">Public Internet</text><text x="160" y="112.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6" dominant-baseline="middle">Frozen at training cutoff</text><rect x="392" y="41" width="260" height="130" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="390" y="40" width="260" height="130" rx="10" fill="#fde8d8" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="520" y="70.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="15" font-weight="700" fill="#a04000" dominant-baseline="middle">Your Knowledge</text><text x="520" y="95.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#ba4a00" dominant-baseline="middle">Private Docs, Wikis</text><text x="520" y="112.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22" dominant-baseline="middle">Always changing</text><line x1="292" y1="105" x2="388" y2="105" stroke="#aaa" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="376.0,111.0 388,105 376.0,99.0" stroke="#aaa" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="312" y="89" width="66" height="34" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="310" y="88" width="66" height="34" rx="8" fill="#fff8e7" stroke="#e67e22" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><text x="343" y="105.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22" dominant-baseline="middle">? gap ?</text><circle cx="22" cy="22" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/><circle cx="658" cy="22" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/><circle cx="22" cy="178" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/><circle cx="658" cy="178" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/></svg></div></p>
+
+<p>This gap is the problem. You need a way to give the LLM access to your private data <strong>at query time</strong>, without retraining it.</p>
+
+<hr>
+
+<h2>The three solutions most engineers try first</h2>
+
+<p>Before reaching for LlamaIndex, every engineer tries at least one of these. Each one teaches you something important.</p>
+
+<h3>Solution 1: Stuff everything into the prompt</h3>
+
+<p>The simplest idea — just put all your docs into the system prompt.</p>
+
+<pre><code class="language-python"># The naive approach
+with open(&quot;company_wiki.txt&quot;) as f:
+    wiki_content = f.read()
+
+prompt = f&quot;&quot;&quot;
+You are a helpful assistant. Here is our company wiki:
+
+{wiki_content}
+
+Answer questions based on this.
+&quot;&quot;&quot;</code></pre>
+
+<p><strong>Why it fails:</strong></p>
+
+<p>Modern LLMs support 128k token context windows. That sounds large — until you do the math. One page of text ≈ 500 tokens. Your 50,000-page wiki = 25 million tokens. That is 200x the context window limit. Even if you could fit it, every single query would process all 25 million tokens. At $0.01 per 1,000 tokens, one question costs $250. For 500 engineers asking 10 questions a day, that is $1.25 million per day.</p>
+
+<p>Context windows are finite. Costs are real. This does not scale past a few documents.</p>
+
+<h3>Solution 2: Fine-tune the model on your data</h3>
+
+<p>If the model does not know your data, why not train it on your data?</p>
+
+<p><strong>Why it fails:</strong></p>
+
+<p>Fine-tuning teaches the model <em>style and behavior</em> — how to format responses, what tone to use, which tasks to prioritize. It does not reliably teach <em>facts</em>. A model fine-tuned on your wiki will still hallucinate specific details. It has learned the pattern of your docs, not the content.</p>
+
+<p>More practically: fine-tuning costs thousands of dollars per run. Your wiki changes every day. You cannot re-fine-tune for every page edit. And even if you did, there is no way to cite which document an answer came from.</p>
+
+<h3>Solution 3: Build a search engine over your docs</h3>
+
+<p>Return the most relevant documents for any query, then show them to the user.</p>
+
+<p><strong>Why it fails (partially):</strong></p>
+
+<p>This actually works for information retrieval. But it is not a conversational interface. You get a list of documents back, not an answer. The user still has to read through them and synthesize the answer themselves. You lose the reasoning and synthesis capability that makes LLMs valuable in the first place.</p>
+
+<hr>
+
+<h2>The right answer: RAG</h2>
+
+<p>Retrieval-Augmented Generation (RAG) combines the best of both: <strong>search precision + LLM reasoning</strong>.</p>
+
+<p>The idea is straightforward:</p>
+<ol><li>Pre-process your documents into a searchable format (offline, done once)</li><li>When a query comes in, search for the most relevant chunks (fast, cheap)</li><li>Give only those relevant chunks to the LLM as context (fits in the context window)</li><li>The LLM reasons over the relevant chunks and produces a grounded answer</li></ol>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>RAG Pipeline</title><rect x="20" y="20" width="660" height="160" rx="12" fill="#e8f4fd" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="6 3"/><text x="36" y="42" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#2471a3">🔧 OFFLINE — Run Once</text><rect x="47" y="82" width="110" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="45" y="81" width="110" height="58" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="100" y="92.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Your Docs</text><text x="100" y="110.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">PDFs, wikis,</text><text x="100" y="128.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">DB</text><rect x="187" y="82" width="110" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="185" y="81" width="110" height="58" rx="6" fill="#fff" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="240" y="101.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Chunk into</text><text x="240" y="119.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">pieces</text><rect x="337" y="82" width="110" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="335" y="81" width="110" height="58" rx="6" fill="#fff" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="390" y="101.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Embed chunks</text><text x="390" y="119.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">→ vectors</text><rect x="502" y="82" width="110" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="500" y="81" width="110" height="58" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="555" y="92.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Vector Store</text><text x="555" y="110.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Searchable</text><text x="555" y="128.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">index</text><line x1="155" y1="110" x2="185" y2="110" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="173.0,116.0 185,110 173.0,104.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="295" y1="110" x2="335" y2="110" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="323.0,116.0 335,110 323.0,104.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="445" y1="110" x2="500" y2="110" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="488.0,116.0 500,110 488.0,104.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="20" y="210" width="660" height="170" rx="12" fill="#e8fde8" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="6 3"/><text x="36" y="232" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#1e8449">⚡ ONLINE — Every Query</text><rect x="30" y="272" width="105" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="28" y="271" width="105" height="58" rx="6" fill="#fef9e7" stroke="#f39c12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="282.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">User Query</text><text x="80" y="300.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">'How to</text><text x="80" y="318.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">deploy?'</text><rect x="165" y="272" width="105" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="163" y="271" width="105" height="58" rx="6" fill="#fff" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="215" y="291.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Embed the</text><text x="215" y="309.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">query</text><rect x="305" y="272" width="105" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="303" y="271" width="105" height="58" rx="6" fill="#fff" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="355" y="291.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Search vector</text><text x="355" y="309.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">store</text><rect x="440" y="272" width="105" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="438" y="271" width="105" height="58" rx="6" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="490" y="300.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">LLM + Context</text><rect x="570" y="272" width="105" height="58" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="568" y="271" width="105" height="58" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="620" y="291.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Grounded</text><text x="620" y="309.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Answer</text><line x1="132" y1="300" x2="163" y2="300" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="151.0,306.0 163,300 151.0,294.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="267" y1="300" x2="303" y2="300" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="291.0,306.0 303,300 291.0,294.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="407" y1="300" x2="438" y2="300" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="426.0,306.0 438,300 426.0,294.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="542" y1="300" x2="568" y2="300" stroke="#111" stroke-width="2"  stroke-linecap="round"/><polyline points="556.0,306.0 568,300 556.0,294.0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="555" y1="139" x2="355" y2="271" stroke="#27ae60" stroke-width="1" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="361.7,259.4 355,271 368.3,269.4" stroke="#27ae60" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></p>
+
+<p>Instead of giving the LLM 25 million tokens, you give it 2,000 tokens of the most relevant content. The answer is grounded in your actual documents. You can cite the source. Cost is predictable.</p>
+
+<p>This is what LlamaIndex implements.</p>
+
+<hr>
+
+<h2>What LlamaIndex actually is</h2>
+
+<p>LlamaIndex is the framework that orchestrates the entire RAG pipeline. It handles three jobs:</p>
+
+<p><strong>Job 1 — Data Ingestion:</strong> It knows how to read 130+ data formats (PDF, Word, Notion, Slack, SQL, Google Drive, websites) and convert them into a standard internal format. You do not write PDF parsers. You use a loader.</p>
+
+<p><strong>Job 2 — Index Construction:</strong> It takes your documents and builds queryable structures — a <code>VectorStoreIndex</code> for semantic search, a <code>SummaryIndex</code> for summarization, a <code>KeywordTableIndex</code> for exact-match retrieval.</p>
+
+<p><strong>Job 3 — Query Orchestration:</strong> It connects the index to the LLM, manages prompt templates, handles retrieval strategies, supports multi-step reasoning with agents, and gives you control over every stage.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>LlamaIndex Architecture</title><rect x="17" y="63" width="90" height="36" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="15" y="62" width="90" height="36" rx="6" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="80.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">PDFs</text><rect x="17" y="123" width="90" height="36" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="15" y="122" width="90" height="36" rx="6" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="140.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Wikis/Notion</text><rect x="17" y="183" width="90" height="36" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="15" y="182" width="90" height="36" rx="6" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="200.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Databases</text><rect x="17" y="243" width="90" height="36" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="15" y="242" width="90" height="36" rx="6" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="260.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">APIs/Slack</text><rect x="182" y="41" width="260" height="240" rx="14" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="180" y="40" width="260" height="240" rx="12" fill="#fef9e7" stroke="#f39c12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="310" y="65.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="16" font-weight="700" fill="#a04000" dominant-baseline="middle">LlamaIndex</text><rect x="222" y="98" width="180" height="46" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="220" y="97" width="180" height="46" rx="6" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="310" y="111.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Loaders</text><text x="310" y="128.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">(SimpleDirectoryReader)</text><rect x="222" y="168" width="180" height="46" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="220" y="167" width="180" height="46" rx="6" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="310" y="181.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Indexes</text><text x="310" y="198.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">(VectorStoreIndex)</text><rect x="222" y="236" width="180" height="46" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="220" y="235" width="180" height="46" rx="6" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="310" y="249.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">Query Engine</text><text x="310" y="266.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#111" dominant-baseline="middle">(RetrieverQueryEngine)</text><rect x="512" y="121" width="150" height="60" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="510" y="120" width="150" height="60" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="585" y="136.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#1e8449" dominant-baseline="middle">Grounded</text><text x="585" y="153.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#1e8449" dominant-baseline="middle">Answers + Citations</text><line x1="105" y1="80" x2="178" y2="160" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="165.5,155.2 178,160 174.3,147.1" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="105" y1="140" x2="178" y2="160" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="164.8,162.6 178,160 168.0,151.0" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="105" y1="200" x2="178" y2="160" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="170.4,171.0 178,160 164.6,160.5" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="105" y1="260" x2="178" y2="160" stroke="#bbb" stroke-width="1"  stroke-linecap="round"/><polyline points="175.8,173.2 178,160 166.1,166.2" stroke="#bbb" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="310" y1="143" x2="310" y2="167" stroke="#e67e22" stroke-width="1"  stroke-linecap="round"/><polyline points="304.0,155.0 310,167 316.0,155.0" stroke="#e67e22" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="310" y1="213" x2="310" y2="235" stroke="#e67e22" stroke-width="1"  stroke-linecap="round"/><polyline points="304.0,223.0 310,235 316.0,223.0" stroke="#e67e22" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="440" y1="160" x2="508" y2="150" stroke="#27ae60" stroke-width="2"  stroke-linecap="round"/><polyline points="497.0,157.7 508,150 495.3,145.8" stroke="#27ae60" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></p>
+
+<p>What it is NOT: a vector database (it uses them), an LLM (it calls them), a model training framework (it does not touch weights).</p>
+
+<hr>
+
+<h2>The 5-line POC</h2>
+
+<p>Before anything complex, this is the simplest possible working system. Run this on your local machine with one document.</p>
+
+<h3>Setup</h3>
+
+<pre><code class="language-bash">pip install llama-index
+export OPENAI_API_KEY=&quot;your-key-here&quot;</code></pre>
+
+<p>Create a test file:</p>
+
+<pre><code class="language-bash">mkdir my_docs
+echo &quot;Our refund policy allows returns within 30 days of purchase. 
+Items must be unused and in original packaging. 
+Refunds are processed within 5-7 business days back to the original payment method.
+For damaged items, contact support@company.com within 48 hours.&quot; &gt; my_docs/policy.txt</code></pre>
+
+<h3>The POC</h3>
+
+<pre><code class="language-python">from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+
+# Step 1: Load your document
+documents = SimpleDirectoryReader(&quot;./my_docs&quot;).load_data()
+
+# Step 2: Build a searchable index (chunks + embeds everything)
+index = VectorStoreIndex.from_documents(documents)
+
+# Step 3: Create a query engine
+engine = index.as_query_engine()
+
+# Step 4: Ask a question
+response = engine.query(&quot;What is the refund policy?&quot;)
+print(response)
+# → &quot;Refunds are allowed within 30 days. Items must be unused and 
+#    in original packaging. Processing takes 5-7 business days.&quot;</code></pre>
+
+<p>Four lines of code. That is the entire RAG pipeline.</p>
+
+<p>What each line actually does under the hood:</p>
+
+<pre><code class="language-python"># SimpleDirectoryReader reads every file in the folder
+# Each file becomes a Document object with text + metadata
+documents = SimpleDirectoryReader(&quot;./my_docs&quot;).load_data()
+print(f&quot;Loaded {len(documents)} document(s)&quot;)
+print(f&quot;First doc ID: {documents[0].doc_id}&quot;)
+print(f&quot;Metadata: {documents[0].metadata}&quot;)
+# → {&#x27;file_name&#x27;: &#x27;policy.txt&#x27;, &#x27;file_size&#x27;: 312, &#x27;creation_date&#x27;: &#x27;2024-06-10&#x27;}
+
+# from_documents runs the full ingestion pipeline:
+# 1. Splits documents into chunks (SentenceSplitter)
+# 2. Embeds each chunk (OpenAI text-embedding-ada-002 by default)
+# 3. Stores vectors in an in-memory dict (SimpleVectorStore)
+index = VectorStoreIndex.from_documents(documents)
+
+# as_query_engine wires together:
+# - VectorIndexRetriever (finds top-2 chunks by cosine similarity)
+# - ResponseSynthesizer (builds prompt + calls LLM)
+engine = index.as_query_engine()
+
+# query embeds your question, searches for similar chunks,
+# builds a prompt, calls the LLM, returns a Response object
+response = engine.query(&quot;What is the refund policy?&quot;)
+print(response.response)           # the answer string
+print(response.source_nodes)       # which chunks produced the answer</code></pre>
+
+<hr>
+
+<h2>The repo structure — your map to the codebase</h2>
+
+<p>When you want to understand how something works, knowing where to look saves hours.</p>
+
+<pre><code class="language-">llama_index/
+├── llama-index-core/                  ← The brain. Start here.
+│   └── llama_index/core/
+│       ├── schema.py                  ← Document, TextNode, BaseNode (Ch. 2)
+│       ├── ingestion/pipeline.py      ← IngestionPipeline (Ch. 5)
+│       ├── node_parser/               ← SentenceSplitter, chunking (Ch. 3)
+│       ├── embeddings/                ← BaseEmbedding, resolution (Ch. 4)
+│       ├── indices/vector_store/      ← VectorStoreIndex (Ch. 6)
+│       ├── query_engine/              ← RetrieverQueryEngine (Ch. 7)
+│       ├── retrievers/                ← VectorIndexRetriever (Ch. 8)
+│       ├── response_synthesizers/     ← How answers get built (Ch. 7)
+│       ├── agent/                     ← AgentRunner, ReAct loop (Ch. 11)
+│       └── callbacks/                 ← Observability hooks (Ch. 10)
+│
+├── llama-index-integrations/          ← 300+ swappable backends
+│   ├── llms/openai/                   ← OpenAI LLM
+│   ├── llms/ollama/                   ← Local Ollama models
+│   ├── vector_stores/chroma/          ← ChromaDB
+│   ├── vector_stores/pinecone/        ← Pinecone
+│   └── embeddings/huggingface/        ← HuggingFace embed models</code></pre>
+
+<p>The key architectural insight: <code>llama-index-core</code> defines <strong>abstract interfaces</strong> (<code>BaseLLM</code>, <code>BaseEmbedding</code>, <code>BaseVectorStore</code>). The integrations implement those interfaces for specific providers. This is why the same query engine code works whether your vector store is an in-memory Python dict or a distributed Pinecone cluster.</p>
+
+<hr>
+
+<h2>From POC to production — what changes</h2>
+
+<p>The 5-line POC works for one document on your laptop. Here is what breaks and what you need at each scale:</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Scaling Stages</title><rect x="22" y="61" width="120" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="20" y="60" width="120" height="80" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="91.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">POC 1 doc,</text><text x="80" y="109.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">local 5 lines</text><rect x="172" y="61" width="120" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="170" y="60" width="120" height="80" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="230" y="82.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Small Scale</text><text x="230" y="100.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">~1,000 docs</text><text x="230" y="118.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Team prototype</text><rect x="332" y="61" width="120" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="330" y="60" width="120" height="80" rx="6" fill="#fdebd0" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="390" y="91.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Production</text><text x="390" y="109.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">~50,000 docs</text><rect x="492" y="61" width="120" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="490" y="60" width="120" height="80" rx="6" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550" y="91.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">Enterprise 10M+</text><text x="550" y="109.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">docs</text><line x1="140" y1="100" x2="170" y2="100" stroke="#666" stroke-width="1"  stroke-linecap="round"/><polyline points="158.0,106.0 170,100 158.0,94.0" stroke="#666" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="85.0" y="89.0" width="148" height="18" rx="4" fill="white" stroke="#666" stroke-width="1"/><text x="155.0" y="103.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#666">+ persistent storage</text><line x1="290" y1="100" x2="330" y2="100" stroke="#666" stroke-width="1"  stroke-linecap="round"/><polyline points="318.0,106.0 330,100 318.0,94.0" stroke="#666" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="254.0" y="89.0" width="120" height="18" rx="4" fill="white" stroke="#666" stroke-width="1"/><text x="310.0" y="103.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#666">+ real vector DB</text><line x1="450" y1="100" x2="490" y2="100" stroke="#666" stroke-width="1"  stroke-linecap="round"/><polyline points="478.0,106.0 490,100 478.0,94.0" stroke="#666" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="400.0" y="89.0" width="148" height="18" rx="4" fill="white" stroke="#666" stroke-width="1"/><text x="470.0" y="103.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#666">+ parallel ingestion</text></svg></div></p>
+
+<table><thead><tr><th>Concern</th><th>POC (1 doc)</th><th>Small (1k docs)</th><th>Production (50k)</th><th>Enterprise (10M)</th></tr></thead><tbody>
+<tr><td>Storage</td><td>RAM (lost on restart)</td><td>Local file persist</td><td>PostgreSQL / Redis</td><td>Distributed vector DB</td></tr>
+<tr><td>Embedding</td><td>OpenAI (10/batch)</td><td>OpenAI (10/batch)</td><td>OpenAI or local</td><td>Local GPU, batched</td></tr>
+<tr><td>Deduplication</td><td>None</td><td>None</td><td>DocstoreStrategy</td><td>DocstoreStrategy + cache</td></tr>
+<tr><td>Parallelism</td><td>Single process</td><td>Single process</td><td>num_workers=4</td><td>Worker pool + queue</td></tr>
+<tr><td>Retrieval</td><td>top-k cosine</td><td>top-k cosine</td><td>Hybrid (BM25 + vector)</td><td>ANN index</td></tr>
+<tr><td>Observability</td><td>None</td><td>Logging</td><td>CallbackManager</td><td>Full tracing + metrics</td></tr>
+</tbody></table>
+
+<p>Each chapter in this series adds one layer. By the end, you will have built the full production system.</p>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In Chapter 2, we go inside the <code>Document</code> object — exactly what fields it holds, how metadata is attached automatically, and how the class hierarchy (<code>BaseComponent → BaseNode → TextNode → Document</code>) is designed so that a PDF page, a Slack message, and a database row all end up with the same shape. This is the foundation that makes the rest of the pipeline data-source-agnostic.</p>
+
+  </div>
+  <nav class="chapter-nav"><span></span><a class="ch-nav-btn ch-nav-next" href="../index.html"><div class="nav-dir">Next →</div>Coming soon</a></nav>
+</main>
+</body>
+</html>

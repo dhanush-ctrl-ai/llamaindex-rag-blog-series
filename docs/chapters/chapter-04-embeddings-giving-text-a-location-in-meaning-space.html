@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch04: Embeddings — Giving Text a Location in Meaning-Space — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+
+/* LAYOUT */
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+
+/* CHAPTER HEADER */
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.ch-intro{font-size:1.05rem;color:var(--muted);
+  border-left:3px solid var(--green);padding-left:16px;
+  margin-bottom:0;line-height:1.7}
+
+/* CONTENT TYPOGRAPHY */
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px;color:var(--text)}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content em{font-style:italic}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);border-left:4px solid var(--green);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content blockquote strong{color:var(--text)}
+
+/* TABLES */
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;
+  border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);
+  vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+
+/* CODE */
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;
+  box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+
+/* DIAGRAM WRAPPER */
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* NAV FOOTER */
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);
+  box-shadow:3px 3px 0 var(--text)}
+.ch-nav-btn .nav-dir{font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.ch-nav-next{text-align:right}
+
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}
+}
+</style>
+
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 04</div>
+    <h1>Chapter 4: Embeddings — Giving Text a Location in Meaning-Space</h1>
+  </header>
+  <div class="content">
+
+<h1>Chapter 4: Embeddings — Giving Text a Location in Meaning-Space</h1>
+
+<blockquote><p><strong>Usecase:</strong> You have 650,000 chunks from your company wiki. To search them by meaning — not just keywords — each chunk needs to be converted into a vector of numbers that captures what it is <em>about</em>.</p></blockquote>
+
+<hr>
+
+<h2>The problem this chapter solves</h2>
+
+<p>You have 650,000 text chunks. A user asks: <em>"How do I roll back a failed deployment?"</em></p>
+
+<p>You cannot do a keyword search — the answer might say "revert to previous release" or "undo the push" or "restore the last stable image". None of those match the words "roll back". You need search that understands <strong>meaning</strong>, not just letters.</p>
+
+<p>Embeddings solve this. Every chunk of text gets converted into a list of numbers — a vector — that represents its meaning geometrically. Text that means similar things ends up with similar vectors. Text about different topics ends up with different vectors.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Meaning Space</title><rect x="20" y="20" width="640" height="240" rx="12" fill="#fafafa" stroke="#ddd" stroke-width="1.5"/><text x="340" y="42.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#888" dominant-baseline="middle">Meaning Space (simplified to 2D)</text><rect x="67" y="75" width="130" height="52" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="65" y="74" width="130" height="52" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="130" y="92.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">refund policy</text><text x="130" y="108.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">[0.8, 0.3]</text><rect x="117" y="130" width="130" height="52" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="115" y="129" width="130" height="52" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="180" y="147.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">return window</text><text x="180" y="163.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">[0.82, 0.28]</text><rect x="17" y="133" width="130" height="52" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="15" y="132" width="130" height="52" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="80" y="142.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">money back</text><text x="80" y="158.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">guarantee [0.79,</text><text x="80" y="174.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">0.33]</text><rect x="52" y="73" width="200" height="150" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="50" y="72" width="200" height="150" rx="8" fill="none" stroke="#27ae60" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><text x="150" y="84.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60" dominant-baseline="middle">Refund cluster</text><rect x="437" y="75" width="130" height="52" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="435" y="74" width="130" height="52" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="500" y="84.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">kubernetes</text><text x="500" y="100.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">deploy [0.1,</text><text x="500" y="116.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">0.9]</text><rect x="487" y="130" width="130" height="52" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="485" y="129" width="130" height="52" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550" y="139.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">push to</text><text x="550" y="155.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">production</text><text x="550" y="171.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">[0.12, 0.88]</text><rect x="387" y="130" width="130" height="52" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="385" y="129" width="130" height="52" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="450" y="147.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">rollback release</text><text x="450" y="163.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#111" dominant-baseline="middle">[0.09, 0.85]</text><rect x="417" y="73" width="220" height="150" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="415" y="72" width="220" height="150" rx="8" fill="none" stroke="#2980b9" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><text x="525" y="84.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9" dominant-baseline="middle">Deploy cluster</text><line x1="260" y1="170" x2="410" y2="170" stroke="#ccc" stroke-width="1" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="398.0,176.0 410,170 398.0,164.0" stroke="#ccc" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="335" y="162.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#bbb" dominant-baseline="middle">far apart</text></svg></div></p>
+
+<p>In reality, vectors have 1536 dimensions (not 2). But the principle is the same: semantically similar text clusters together in this high-dimensional space. Search becomes: <em>"find the vectors closest to my query vector"</em>.</p>
+
+<hr>
+
+<h2>What an embedding model does</h2>
+
+<p>An embedding model is a neural network trained to read text and output a fixed-size list of floats. The model has seen billions of text pairs and learned which passages are semantically related. By training time, it has encoded the structure of language into its weights.</p>
+
+<p>When you pass <code>"refund policy"</code> to an embedding model, it returns something like:</p>
+
+<pre><code class="language-python">[0.023, -0.891, 0.442, 0.103, -0.234, ..., 0.671]  # 1536 numbers</code></pre>
+
+<p>Every number encodes a latent dimension of meaning. No single dimension maps to a human concept like "refund" or "return" — the meaning is distributed across all 1536 numbers together. The model learns this representation automatically during training.</p>
+
+<p>The critical property: <strong>the angle between two vectors measures semantic similarity</strong>. Vectors pointing in the same direction = similar meaning. Vectors pointing in opposite directions = opposite meaning. Perpendicular vectors = unrelated topics.</p>
+
+<p>This is why the similarity metric is called <strong>cosine similarity</strong> — it measures the cosine of the angle between two vectors.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Cosine Similarity Angle</title><line x1="200" y1="180" x2="360" y2="180" stroke="#ddd" stroke-width="1"/><line x1="200" y1="180" x2="200" y2="20" stroke="#ddd" stroke-width="1"/><line x1="200" y1="180" x2="330" y2="80" stroke="#27ae60" stroke-width="3"  stroke-linecap="round"/><polyline points="324.1,92.1 330,80 316.8,82.6" stroke="#27ae60" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="345" y="70.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60" dominant-baseline="middle">refund policy</text><line x1="200" y1="180" x2="320" y2="65" stroke="#2980b9" stroke-width="3"  stroke-linecap="round"/><polyline points="315.5,77.6 320,65 307.2,69.0" stroke="#2980b9" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="325" y="55.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9" dominant-baseline="middle">return window</text><line x1="200" y1="180" x2="220" y2="25" stroke="#e67e22" stroke-width="3"  stroke-linecap="round"/><polyline points="224.4,37.7 220,25 212.5,36.1" stroke="#e67e22" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="225" y="20.0" text-anchor="start" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22" dominant-baseline="middle">kubernetes deploy</text><path d="M 230 180 A 30 30 0 0 0 222 158" fill="none" stroke="#27ae60" stroke-width="1.5" opacity="0.6"/><text x="245" y="162.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60" dominant-baseline="middle">≈0.95 (similar)</text><path d="M 215 165 A 50 50 0 0 0 208 130" fill="none" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/><text x="280" y="120.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22" dominant-baseline="middle">≈0.12 (unrelated)</text><rect x="452" y="31" width="200" height="100" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="450" y="30" width="200" height="100" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550" y="52.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#a04000" dominant-baseline="middle">Cosine Similarity</text><text x="550" y="78.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#a04000" dominant-baseline="middle">cos(θ) = A·B / |A||B|</text><text x="550" y="105.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888" dominant-baseline="middle">range: −1  to  +1</text></svg></div></p>
+
+<hr>
+
+<h2>The <code>BaseEmbedding</code> interface</h2>
+
+<p>Every embedding model in LlamaIndex — whether it is OpenAI, HuggingFace, Cohere, or a custom local model — implements the same interface. This is what makes them swappable without changing any other code.</p>
+
+<pre><code class="language-python">class BaseEmbedding(BaseComponent):
+    model_name:       str
+    embed_batch_size: int   # how many texts to embed in one API call
+
+    # Used during ingestion — embed each chunk
+    def get_text_embedding(self, text: str) -&gt; List[float]: ...
+
+    # Used at query time — embed the user&#x27;s question
+    def get_query_embedding(self, query: str) -&gt; List[float]: ...
+
+    # Batch version — embed many chunks in one go (faster)
+    def get_text_embedding_batch(self, texts: List[str]) -&gt; List[List[float]]: ...
+
+    # Async versions — for non-blocking ingestion
+    async def aget_text_embedding(self, text: str) -&gt; List[float]: ...
+    async def aget_query_embedding(self, query: str) -&gt; List[float]: ...</code></pre>
+
+<p>Notice there are <strong>two separate methods</strong> for text vs query: <code>get_text_embedding</code> for chunks during ingestion, and <code>get_query_embedding</code> for the user's question at query time.</p>
+
+<p>This split exists because some embedding models use different instructions for the two contexts. The <code>BAAI/bge</code> family of models, for example, prepends <code>"Represent this sentence for searching relevant passages: "</code> to queries but not to documents. LlamaIndex calls the right method automatically — you never have to think about it.</p>
+
+<hr>
+
+<h2>The embed model resolution chain</h2>
+
+<p>This is the most important thing to understand before running your first ingestion. When LlamaIndex needs an embed model and you have not explicitly set one, it follows a four-level resolution chain. <strong>Getting this wrong costs money and produces silent failures.</strong></p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Embed Model Resolution Chain</title><rect x="172" y="15" width="160" height="32" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="170" y="14" width="160" height="32" rx="8" fill="#111" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="250" y="30.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#fff" dominant-baseline="middle">Ingestion starts</text><rect x="142" y="79" width="220" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="140" y="78" width="220" height="44" rx="8" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="250" y="84.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">Level 1</text><text x="250" y="100.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">Embed model passed</text><text x="250" y="116.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">directly to pipeline?</text><line x1="250" y1="46" x2="250" y2="78" stroke="#555" stroke-width="1"  stroke-linecap="round"/><polyline points="244.0,66.0 250,78 256.0,66.0" stroke="#555" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="407" y="79" width="130" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="405" y="78" width="130" height="44" rx="8" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="470" y="100.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="700" fill="#27ae60" dominant-baseline="middle">Use it ✅</text><line x1="360" y1="100" x2="405" y2="100" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polyline points="393.0,106.0 405,100 393.0,94.0" stroke="#27ae60" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="372.0" y="89.0" width="29" height="18" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="382.5" y="103.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">Yes</text><rect x="142" y="149" width="220" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="140" y="148" width="220" height="44" rx="8" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="250" y="154.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">Level 2</text><text x="250" y="170.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">Settings.embed_model</text><text x="250" y="186.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">set globally?</text><line x1="250" y1="122" x2="250" y2="148" stroke="#555" stroke-width="1"  stroke-linecap="round"/><polyline points="244.0,136.0 250,148 256.0,136.0" stroke="#555" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="407" y="149" width="130" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="405" y="148" width="130" height="44" rx="8" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="470" y="170.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="700" fill="#27ae60" dominant-baseline="middle">Use it ✅</text><line x1="360" y1="170" x2="405" y2="170" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polyline points="393.0,176.0 405,170 393.0,164.0" stroke="#27ae60" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="372.0" y="159.0" width="29" height="18" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="382.5" y="173.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">Yes</text><rect x="142" y="219" width="220" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="140" y="218" width="220" height="44" rx="8" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="250" y="224.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">Level 3</text><text x="250" y="240.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">OPENAI_API_KEY</text><text x="250" y="256.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#a04000" dominant-baseline="middle">in environment?</text><line x1="250" y1="192" x2="250" y2="218" stroke="#555" stroke-width="1"  stroke-linecap="round"/><polyline points="244.0,206.0 250,218 256.0,206.0" stroke="#555" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="407" y="219" width="130" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="405" y="218" width="130" height="44" rx="8" fill="#fdebd0" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="470" y="232.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="700" fill="#e67e22" dominant-baseline="middle">Silently use</text><text x="470" y="248.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="700" fill="#e67e22" dominant-baseline="middle">OpenAI ada-002 ⚠️</text><line x1="360" y1="240" x2="405" y2="240" stroke="#e67e22" stroke-width="1"  stroke-linecap="round"/><polyline points="393.0,246.0 405,240 393.0,234.0" stroke="#e67e22" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="372.0" y="229.0" width="29" height="18" rx="4" fill="white" stroke="#e67e22" stroke-width="1"/><text x="382.5" y="243.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#e67e22">Yes</text><line x1="250" y1="262" x2="250" y2="294" stroke="#c0392b" stroke-width="1"  stroke-linecap="round"/><polyline points="244.0,282.0 250,294 256.0,282.0" stroke="#c0392b" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="229.0" y="267.0" width="50" height="18" rx="4" fill="white" stroke="#c0392b" stroke-width="1"/><text x="250.0" y="281.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#c0392b">No key</text><rect x="132" y="295" width="240" height="44" rx="10" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="130" y="294" width="240" height="44" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="250" y="302.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#922b21" dominant-baseline="middle">Level 4: MockEmbedding</text><text x="250" y="318.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#922b21" dominant-baseline="middle">Zero vectors — silent failure ❌</text></svg></div></p>
+
+<p>Level 4 (<code>MockEmbedding</code>) is the dangerous one. Your pipeline runs without errors. Your index gets built. But every embedding is a zero vector. Cosine similarity between zero vectors is mathematically undefined — the retriever returns random or zero-score results. Your RAG system confidently returns garbage, and you get no exception telling you why.</p>
+
+<p><strong>Always be explicit.</strong> Never rely on the environment-variable fallback for production code.</p>
+
+<hr>
+
+<h2>The fatal consistency constraint</h2>
+
+<p>This is the most common production bug in RAG systems, and it produces no error message.</p>
+
+<p>The embed model you use during <strong>ingestion</strong> and the embed model you use at <strong>query time</strong> must be identical — same model, same version, same dimensionality.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Embedding Consistency</title><rect x="22" y="21" width="290" height="160" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="20" y="20" width="290" height="160" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165" y="44.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#922b21" dominant-baseline="middle">❌ Inconsistent Models</text><rect x="52" y="77" width="230" height="38" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="50" y="76" width="230" height="38" rx="6" fill="#fff" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165" y="79.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b" dominant-baseline="middle">Ingest:</text><text x="165" y="95.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b" dominant-baseline="middle">text-embedding-3-small 1536</text><text x="165" y="111.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b" dominant-baseline="middle">dims</text><rect x="52" y="127" width="230" height="38" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="50" y="126" width="230" height="38" rx="6" fill="#fff" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165" y="129.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b" dominant-baseline="middle">Query:</text><text x="165" y="145.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b" dominant-baseline="middle">text-embedding-3-large 3072</text><text x="165" y="161.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b" dominant-baseline="middle">dims</text><line x1="165" y1="114" x2="165" y2="126" stroke="#c0392b" stroke-width="1"  stroke-linecap="round"/><polyline points="159.0,114.0 165,126 171.0,114.0" stroke="#c0392b" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="165" y="178.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="10" font-weight="600" fill="#c0392b" dominant-baseline="middle">Different spaces → wrong answers</text><rect x="372" y="21" width="290" height="160" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="370" y="20" width="290" height="160" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515" y="44.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#1e8449" dominant-baseline="middle">✅ Consistent Model</text><rect x="402" y="77" width="230" height="38" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="400" y="76" width="230" height="38" rx="6" fill="#fff" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515" y="87.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60" dominant-baseline="middle">Ingest: BAAI/bge-base 768</text><text x="515" y="103.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60" dominant-baseline="middle">dims</text><rect x="402" y="127" width="230" height="38" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="400" y="126" width="230" height="38" rx="6" fill="#fff" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515" y="137.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60" dominant-baseline="middle">Query: BAAI/bge-base 768</text><text x="515" y="153.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60" dominant-baseline="middle">dims</text><line x1="515" y1="114" x2="515" y2="126" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polyline points="509.0,114.0 515,126 521.0,114.0" stroke="#27ae60" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="515" y="178.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="10" font-weight="600" fill="#27ae60" dominant-baseline="middle">Same space → correct answers ✓</text></svg></div></p>
+
+<p>Why does it fail silently? Because cosine similarity is always a valid number between -1 and 1. If your query vector has 3072 dimensions and your stored vectors have 1536 dimensions, LlamaIndex will raise a dimension mismatch error. But if you use two different 1536-dimensional models — say <code>ada-002</code> for ingestion and <code>text-embedding-3-small</code> for querying — the vectors have the same shape but exist in different geometric spaces. Cosine similarity gives you a number, but it means nothing. Your retriever returns wrong chunks. The LLM generates plausible-sounding wrong answers.</p>
+
+<p>The safest pattern: define the embed model once, use it everywhere.</p>
+
+<pre><code class="language-python"># config.py — define once
+from llama_index.core import Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-base-en-v1.5&quot;)
+
+# ingestion.py — uses Settings automatically
+index = VectorStoreIndex.from_documents(documents)
+
+# query.py — same Settings, same model
+engine = index.as_query_engine()</code></pre>
+
+<p>One assignment. Zero risk of mismatch.</p>
+
+<hr>
+
+<h2>Choosing your embed model</h2>
+
+<p>There are three realistic choices, each with a different cost/quality/latency profile:</p>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Embed Model Comparison</title><rect x="17" y="51" width="170" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="15" y="50" width="170" height="80" rx="6" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="100" y="81.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">OpenAI</text><text x="100" y="99.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">text-embedding-3-small</text><text x="100" y="148.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="10" font-weight="600" fill="#9b59b6" dominant-baseline="middle">Cost: Cost  Speed: API latency</text><rect x="257" y="51" width="170" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="255" y="50" width="170" height="80" rx="6" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340" y="72.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">HuggingFace</text><text x="340" y="90.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">BAAI/bge-base (local</text><text x="340" y="108.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">GPU)</text><text x="340" y="148.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="10" font-weight="600" fill="#27ae60" dominant-baseline="middle">Cost: Free  Speed: Fast (GPU)</text><rect x="497" y="51" width="170" height="80" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="495" y="50" width="170" height="80" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="580" y="72.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">HuggingFace</text><text x="580" y="90.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">BAAI/bge-small (local</text><text x="580" y="108.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#111" dominant-baseline="middle">CPU)</text><text x="580" y="148.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="10" font-weight="600" fill="#2980b9" dominant-baseline="middle">Cost: Free  Speed: OK (CPU)</text><text x="340" y="190.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888" dominant-baseline="middle">Choose based on: data privacy · quality · budget · infra</text></svg></div></p>
+
+<table><thead><tr><th>Model</th><th>Dimensions</th><th>Cost</th><th>Privacy</th><th>Speed</th><th>Quality</th></tr></thead><tbody>
+<tr><td><code>text-embedding-ada-002</code></td><td>1536</td><td>$0.10/1M tokens</td><td>Data leaves your infra</td><td>API latency</td><td>Good</td></tr>
+<tr><td><code>text-embedding-3-small</code></td><td>1536</td><td>$0.02/1M tokens</td><td>Data leaves your infra</td><td>API latency</td><td>Better</td></tr>
+<tr><td><code>text-embedding-3-large</code></td><td>3072</td><td>$0.13/1M tokens</td><td>Data leaves your infra</td><td>API latency</td><td>Best (OpenAI)</td></tr>
+<tr><td><code>BAAI/bge-small-en-v1.5</code></td><td>384</td><td>Free</td><td>Stays on your machine</td><td>Fast (CPU)</td><td>Good</td></tr>
+<tr><td><code>BAAI/bge-base-en-v1.5</code></td><td>768</td><td>Free</td><td>Stays on your machine</td><td>Fast (CPU)</td><td>Very Good</td></tr>
+<tr><td><code>BAAI/bge-large-en-v1.5</code></td><td>1024</td><td>Free</td><td>Stays on your machine</td><td>Needs GPU</td><td>Excellent</td></tr>
+</tbody></table>
+
+<p>For a company wiki with internal data: <code>BAAI/bge-base-en-v1.5</code> is the practical default — free, fast, strong quality, and your data never leaves your infrastructure.</p>
+
+<hr>
+
+<h2>The POC: run embedding and inspect the output</h2>
+
+<h3>Setup</h3>
+
+<pre><code class="language-bash">pip install llama-index
+pip install llama-index-embeddings-huggingface
+
+# No API key needed for HuggingFace local models</code></pre>
+
+<h3>Basic embedding inspection</h3>
+
+<pre><code class="language-python">from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+
+# Embed a single piece of text
+vector = embed_model.get_text_embedding(&quot;Our refund policy allows returns within 30 days.&quot;)
+
+print(f&quot;Vector dimensions: {len(vector)}&quot;)          # → 384
+print(f&quot;First 5 values:    {vector[:5]}&quot;)           # → [0.034, -0.712, 0.441, ...]
+print(f&quot;Value range:       {min(vector):.3f} to {max(vector):.3f}&quot;)</code></pre>
+
+<h3>See similarity in action</h3>
+
+<pre><code class="language-python">import numpy as np
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+
+def cosine_similarity(v1, v2):
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+texts = [
+    &quot;Our refund policy allows returns within 30 days.&quot;,   # the stored chunk
+    &quot;What is the return window for purchases?&quot;,            # similar query
+    &quot;How do I deploy to Kubernetes?&quot;,                      # unrelated
+    &quot;Money back guarantee terms and conditions.&quot;,          # related phrase
+]
+
+# Embed all texts
+vectors = [embed_model.get_text_embedding(t) for t in texts]
+
+# Compare chunk 0 with everything else
+reference = texts[0]
+ref_vec   = vectors[0]
+
+print(f&quot;Reference: &#x27;{reference}&#x27;\n&quot;)
+for i in range(1, len(texts)):
+    sim = cosine_similarity(ref_vec, vectors[i])
+    print(f&quot;  vs &#x27;{texts[i]}&#x27;&quot;)
+    print(f&quot;     similarity: {sim:.4f}&quot;)
+    print()</code></pre>
+
+<p>Expected output:</p>
+
+<pre><code class="language-">Reference: &#x27;Our refund policy allows returns within 30 days.&#x27;
+
+  vs &#x27;What is the return window for purchases?&#x27;
+     similarity: 0.8234    ← high — same semantic space
+
+  vs &#x27;How do I deploy to Kubernetes?&#x27;
+     similarity: 0.1247    ← low — different topic
+
+  vs &#x27;Money back guarantee terms and conditions.&#x27;
+     similarity: 0.7891    ← high — same concept, different words</code></pre>
+
+<h3>Full pipeline: load → chunk → embed → inspect</h3>
+
+<pre><code class="language-python">from llama_index.core import SimpleDirectoryReader, Settings
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+# Set the embed model globally once
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+
+# Load
+documents = SimpleDirectoryReader(input_files=[&quot;./policy.txt&quot;]).load_data()
+
+# Run the pipeline: chunk + embed
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=256, chunk_overlap=25),
+        Settings.embed_model,
+    ]
+)
+nodes = pipeline.run(documents=documents)
+
+# Inspect what we got
+print(f&quot;Total chunks embedded: {len(nodes)}&quot;)
+
+for node in nodes[:2]:
+    print(f&quot;\n=== Chunk ===&quot;)
+    print(f&quot;Text:      {node.text[:100]}...&quot;)
+    print(f&quot;Embedding: {node.embedding[:5]}... (dim={len(node.embedding)})&quot;)
+    print(f&quot;Has embedding: {node.embedding is not None}&quot;)</code></pre>
+
+<h3>Verify consistency: ingestion vs query</h3>
+
+<pre><code class="language-python">from llama_index.core import Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+import numpy as np
+
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+
+# What gets embedded during ingestion
+chunk_text = &quot;Our refund policy allows returns within 30 days.&quot;
+chunk_vec  = Settings.embed_model.get_text_embedding(chunk_text)
+
+# What gets embedded at query time
+query_text = &quot;What is the refund policy?&quot;
+query_vec  = Settings.embed_model.get_query_embedding(query_text)
+#                                  ^^^ note: get_query_embedding, not get_text_embedding
+
+# Verify they live in the same vector space (same dimensions)
+assert len(chunk_vec) == len(query_vec), &quot;Dimension mismatch! Different models.&quot;
+print(f&quot;Both vectors: {len(chunk_vec)} dimensions ✓&quot;)
+
+# Compute similarity
+sim = np.dot(chunk_vec, query_vec) / (np.linalg.norm(chunk_vec) * np.linalg.norm(query_vec))
+print(f&quot;Similarity: {sim:.4f}&quot;)   # should be high, ~0.85+</code></pre>
+
+<hr>
+
+<h2>Scaling up: embedding 650,000 chunks</h2>
+
+<p>The POC embeds each chunk sequentially. At 650,000 chunks, you hit three problems.</p>
+
+<h3>The bottleneck math</h3>
+
+<p>For OpenAI <code>text-embedding-3-small</code>:</p>
+<ul><li>Default batch size: 10 chunks per API call</li><li>650,000 chunks ÷ 10 = 65,000 API calls</li><li>At 150ms per call: <strong>162 minutes</strong> single-threaded</li><li>At $0.02 per 1M tokens × (650,000 × avg 384 tokens) = <strong>~$5</strong> per full ingestion</li></ul>
+
+<p>For <code>BAAI/bge-base-en-v1.5</code> on a single CPU:</p>
+<ul><li>Batch size: 64 chunks per pass (no network, pure compute)</li><li>650,000 ÷ 64 = 10,156 compute batches</li><li>At 50ms per batch on CPU: <strong>~8 minutes</strong></li><li>Cost: $0</li></ul>
+
+<h3>Fix 1: Increase batch size</h3>
+
+<p>The default <code>embed_batch_size=10</code> is conservative for API rate limits. For local models, it should be much higher:</p>
+
+<pre><code class="language-python">from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+# Local model — batch up to GPU/CPU memory limit
+embed_model = HuggingFaceEmbedding(
+    model_name=&quot;BAAI/bge-base-en-v1.5&quot;,
+    embed_batch_size=64,    # 6x faster than default 10
+)
+
+# OpenAI — stay under rate limits
+from llama_index.embeddings.openai import OpenAIEmbedding
+embed_model = OpenAIEmbedding(
+    model=&quot;text-embedding-3-small&quot;,
+    embed_batch_size=100,   # OpenAI supports up to 2048 per call
+)</code></pre>
+
+<h3>Fix 2: Async embedding for API-based models</h3>
+
+<pre><code class="language-python">from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.embeddings.openai import OpenAIEmbedding
+
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=512, chunk_overlap=50),
+        OpenAIEmbedding(embed_batch_size=100),
+    ]
+)
+
+# arun — fires async embed calls, overlapping I/O wait
+# num_workers — splits document list across CPU processes
+nodes = await pipeline.arun(documents=documents, num_workers=4)</code></pre>
+
+<h3>Fix 3: Cache embeddings — never re-embed unchanged chunks</h3>
+
+<p>This is the biggest win at scale. If you run ingestion daily to pick up wiki updates, 99% of your chunks have not changed. Re-embedding them is pure waste.</p>
+
+<pre><code class="language-python">from llama_index.core.ingestion import IngestionPipeline, IngestionCache
+from llama_index.core.ingestion.cache import RedisCache
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=512, chunk_overlap=50),
+        HuggingFaceEmbedding(model_name=&quot;BAAI/bge-base-en-v1.5&quot;),
+    ],
+    # Cache key = hash(node_text + transformation_config)
+    # If the same chunk was embedded before, return cached vector
+    cache=IngestionCache(
+        cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379),
+        collection=&quot;embedding_cache&quot;,
+    ),
+)
+
+# First run: embeds all 650,000 chunks — takes ~8 minutes
+nodes = pipeline.run(documents=documents, num_workers=4)
+
+# Second run (next day, 500 new docs added):
+# 649,500 chunks → cache hit, zero embed calls
+# 500 new chunks → embedded fresh
+nodes = pipeline.run(documents=updated_documents, num_workers=4)
+# Takes ~4 seconds instead of 8 minutes</code></pre>
+
+<h3>Fix 4: Full production setup</h3>
+
+<pre><code class="language-python">from llama_index.core import Settings
+from llama_index.core.ingestion import IngestionPipeline, IngestionCache, DocstoreStrategy
+from llama_index.core.ingestion.cache import RedisCache
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.storage.docstore.redis import RedisDocumentStore
+from llama_index.vector_stores.chroma import ChromaVectorStore
+import chromadb
+
+# 1. Define model once — used everywhere
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name=&quot;BAAI/bge-base-en-v1.5&quot;,
+    embed_batch_size=64,
+)
+
+# 2. Set up persistent storage
+chroma_client     = chromadb.HttpClient(host=&quot;localhost&quot;, port=8000)
+chroma_collection = chroma_client.get_or_create_collection(&quot;company_wiki&quot;)
+vector_store      = ChromaVectorStore(chroma_collection=chroma_collection)
+
+# 3. Build the production pipeline
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=512, chunk_overlap=50),
+        Settings.embed_model,
+    ],
+    docstore=RedisDocumentStore.from_host_and_port(
+        &quot;localhost&quot;, 6379, namespace=&quot;wiki_docs&quot;
+    ),
+    vector_store=vector_store,
+    cache=IngestionCache(
+        cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379),
+        collection=&quot;embedding_cache&quot;,
+    ),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)
+
+# 4. Run — only new/changed chunks hit the embed model
+nodes = pipeline.run(documents=documents, num_workers=4)
+print(f&quot;Ingested {len(nodes)} chunks&quot;)</code></pre>
+
+<hr>
+
+<h2>Day One vs Production comparison</h2>
+
+<p><div class="diagram-wrap"><svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="font-family:Caveat,cursive"><title>Embedding Day One vs Production</title><rect x="22" y="21" width="300" height="165" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="20" y="20" width="300" height="165" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="42.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="14" font-weight="700" fill="#1e8449" dominant-baseline="middle">Day One</text><rect x="52" y="67" width="240" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="50" y="66" width="240" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="72.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">OpenAI fallback</text><text x="170" y="88.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">(OPENAI_API_KEY)</text><rect x="52" y="105" width="240" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="50" y="104" width="240" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="118.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">batch_size=10 (sequential)</text><rect x="52" y="143" width="240" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="50" y="142" width="240" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="156.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">In-memory storage</text><rect x="362" y="21" width="300" height="165" rx="12" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="360" y="20" width="300" height="165" rx="10" fill="#fdebd0" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="42.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="14" font-weight="700" fill="#a04000" dominant-baseline="middle">Production</text><rect x="392" y="67" width="240" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="390" y="66" width="240" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="72.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Settings.embed_model —</text><text x="510" y="88.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">explicit</text><rect x="392" y="105" width="240" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="390" y="104" width="240" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="110.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">batch_size=64, arun() +</text><text x="510" y="126.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">workers</text><rect x="392" y="143" width="240" height="28" rx="8" fill="rgba(0,0,0,0.06)" stroke="none"/><rect x="390" y="142" width="240" height="28" rx="6" fill="#fff" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510" y="156.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#aaa" dominant-baseline="middle">Redis cache + persistent store</text></svg></div></p>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
+<tr><td>Model selection</td><td>Resolution chain (silent OpenAI fallback)</td><td><code>Settings.embed_model</code> — always explicit</td></tr>
+<tr><td>Batch size</td><td>10 (API default)</td><td>64–100+ (tuned to model)</td></tr>
+<tr><td>Parallelism</td><td>Sequential</td><td><code>arun()</code> + <code>num_workers=4</code></td></tr>
+<tr><td>Storage</td><td>In-memory</td><td>Persistent vector store</td></tr>
+<tr><td>Caching</td><td>None</td><td><code>IngestionCache</code> + Redis</td></tr>
+<tr><td>Re-ingestion</td><td>Re-embeds everything</td><td>Only changed chunks</td></tr>
+<tr><td>Cost</td><td>Unpredictable</td><td>Predictable (mostly cache hits)</td></tr>
+<tr><td>Data privacy</td><td>Data sent to OpenAI</td><td>Local model, data stays on-prem</td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>The one thing that will save you the most debugging time</h2>
+
+<p>Run this check before every production deployment:</p>
+
+<pre><code class="language-python">from llama_index.core import Settings
+import numpy as np
+
+def verify_embedding_consistency(embed_model, sample_text=&quot;test&quot;):
+    &quot;&quot;&quot;Verify text and query embeddings are in the same vector space.&quot;&quot;&quot;
+    text_vec  = embed_model.get_text_embedding(sample_text)
+    query_vec = embed_model.get_query_embedding(sample_text)
+    
+    assert len(text_vec) == len(query_vec), (
+        f&quot;Dimension mismatch: text={len(text_vec)}, query={len(query_vec)}&quot;
+    )
+    
+    sim = np.dot(text_vec, query_vec) / (
+        np.linalg.norm(text_vec) * np.linalg.norm(query_vec)
+    )
+    
+    print(f&quot;Model: {embed_model.model_name}&quot;)
+    print(f&quot;Dimensions: {len(text_vec)}&quot;)
+    print(f&quot;Self-similarity (should be ~1.0): {sim:.4f}&quot;)
+    assert sim &gt; 0.95, f&quot;Low self-similarity ({sim:.4f}) — model may have changed&quot;
+    print(&quot;✓ Embedding model is consistent&quot;)
+
+verify_embedding_consistency(Settings.embed_model)</code></pre>
+
+<p>Run this as a startup check. If the model changes between your ingestion job and your query service — version drift, accidental config change — this will catch it immediately instead of three days later when users report wrong answers.</p>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In Chapter 5, we put everything together: the <code>IngestionPipeline</code> that connects loading → chunking → embedding into one orchestrated flow, and the <code>StorageContext</code> that decides where everything gets persisted. We will also cover <code>DocstoreStrategy</code> — how LlamaIndex tracks which documents have changed and skips re-processing the ones that have not.</p>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-03-chunking-turning-documents-into-searchable-pieces.html"><div class="nav-dir">← Previous</div>Chunking — Turning Documents into Searchable Pieces</a></nav>
+</main>
+</body>
+</html>
