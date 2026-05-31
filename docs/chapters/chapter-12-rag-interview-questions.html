@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch12: RAG Interview Questions — How Top Companies Test You — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);box-shadow:3px 3px 0 var(--text)}
+.ch-nav-next{text-align:right;margin-left:auto}
+.nav-dir{font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:4px}
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 12</div>
+    <h1>Chapter 12: RAG Interview Questions — How Top Companies Test You</h1>
+  </header>
+  <div class="content">
+
+<hr>
+
+<h2>How to use this chapter</h2>
+
+<p>Every answer follows the same structure interviewers at FAANG and AI companies reward:</p>
+
+<ol><li><strong>Single user</strong> — the simplest working solution for one person</li><li><strong>Scale to millions</strong> — what breaks, and the exact architectural changes that fix it</li><li><strong>Pros and cons</strong> — a clear tradeoff table for both approaches</li></ol>
+
+<p>This mirrors how staff engineers think. You start simple, justify every added complexity, and name the tradeoffs explicitly. Answers that jump straight to Kubernetes and Kafka without explaining the simple case fail interviews at every level.</p>
+
+<hr>
+
+<h2>Q1 — Design a RAG system from scratch for a large-scale enterprise knowledge base</h2>
+
+<p><strong>Asked at:</strong> Google · Meta · Amazon · Microsoft · Cohere · Databricks · Scale AI</p>
+
+<p><strong>Frequency:</strong> ★★★★★ — appears in virtually every ML/SWE loop at companies building RAG products</p>
+
+<hr>
+
+<h3>Single user — the MVP</h3>
+
+<p>For one user querying a single corpus, the entire system is five lines of Python:</p>
+
+<pre><code class="language-python">from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+
+index  = VectorStoreIndex.from_documents(
+    SimpleDirectoryReader(&quot;./docs&quot;).load_data()
+)
+response = index.as_query_engine().query(&quot;How do I roll back a deployment?&quot;)
+print(response.response)</code></pre>
+
+<p>The pipeline behind those five lines has four stages:</p>
+
+<p><strong>Ingestion</strong> — <code>SimpleDirectoryReader</code> loads every file in <code>./docs</code> into <code>Document</code> objects. <code>VectorStoreIndex.from_documents</code> chunks each document with <code>SentenceSplitter</code> (default: 1024 tokens, 200 overlap), calls the embed model on each chunk, and stores the resulting vectors in a <code>SimpleVectorStore</code> (an in-memory Python dict).</p>
+
+<p><strong>Index</strong> — The <code>SimpleVectorStore</code> holds all embeddings as a NumPy matrix. It is rebuilt from scratch on every restart.</p>
+
+<p><strong>Retrieval</strong> — <code>query()</code> embeds the question, runs cosine similarity against all stored vectors, returns the top-2 <code>TextNode</code> objects with scores.</p>
+
+<p><strong>Synthesis</strong> — The <code>RetrieverQueryEngine</code> packs the two chunks into a prompt template, calls the LLM, and returns a <code>Response</code> object with <code>.response</code> (the answer) and <code>.source_nodes</code> (citations).</p>
+
+<p>This works for a demo. It breaks the moment you have more than ~50k documents, need answers to survive a restart, or have more than one user.</p>
+
+<hr>
+
+<h3>Scale to millions — the production system</h3>
+
+<p>At 10 million documents with 500 concurrent users, five things break simultaneously:</p>
+
+<pre><code class="language-">Single process      → parallel ingestion workers (num_workers=4+)
+In-memory store     → Pinecone / Weaviate / pgvector
+No caching          → Redis IngestionCache + DocstoreStrategy
+O(N) vector scan    → ANN index (HNSW inside the vector DB)
+Sync query          → async query engine + load balancer</code></pre>
+
+<p>The production architecture:</p>
+
+<pre><code class="language-python">from llama_index.core import Settings
+from llama_index.core.ingestion import IngestionPipeline, IngestionCache, DocstoreStrategy
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.storage.docstore.redis import RedisDocumentStore
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from llama_index.core.ingestion.cache import RedisCache
+
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name=&quot;BAAI/bge-base-en-v1.5&quot;,
+    embed_batch_size=64,
+)
+
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(chunk_size=512, chunk_overlap=50), Settings.embed_model],
+    docstore=RedisDocumentStore.from_host_and_port(&quot;localhost&quot;, 6379),
+    vector_store=PineconeVectorStore(pinecone_index=pc.Index(&quot;wiki&quot;)),
+    cache=IngestionCache(cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379)),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)
+
+nodes = pipeline.run(documents=changed_docs, num_workers=4)</code></pre>
+
+<p>Query path: load-balanced HTTPS → async query engine → embed query → Pinecone ANN search (HNSW, sub-10ms) → top-k nodes → <code>SimilarityPostprocessor(cutoff=0.75)</code> → COMPACT synthesis → response with <code>source_nodes</code>.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Concern</th><th>Single-user MVP</th><th>Production system</th></tr></thead><tbody>
+<tr><td>Setup time</td><td>5 minutes</td><td>Days to weeks</td></tr>
+<tr><td>Storage</td><td>RAM — lost on restart</td><td>Pinecone / Redis — persistent</td></tr>
+<tr><td>Query latency</td><td>10–100ms (O(N) scan)</td><td>< 10ms (HNSW ANN)</td></tr>
+<tr><td>Ingestion cost</td><td>Re-embeds everything every run</td><td>Only changed documents</td></tr>
+<tr><td>Horizontal scale</td><td>1 process, 1 machine</td><td>N workers + load balancer</td></tr>
+<tr><td>Observability</td><td>None</td><td>CallbackManager + structured logs</td></tr>
+<tr><td>Operational complexity</td><td>Zero</td><td>Redis + Pinecone + workers to maintain</td></tr>
+<tr><td>Best for</td><td>Prototypes, demos, < 50k docs</td><td>Live products, > 500k docs</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> Start with the 5-line version and say "this breaks at scale for three specific reasons." Then name each reason and its fix. Engineers who jump straight to Pinecone without explaining why rarely get the offer.</p>
+
+<hr>
+
+<h2>Q2 — How do you choose chunk size, and what happens when you get it wrong?</h2>
+
+<p><strong>Asked at:</strong> Amazon · Cohere · Databricks · OpenAI · Hugging Face</p>
+
+<p><strong>Frequency:</strong> ★★★★★ — the single most probed technical detail in RAG interviews</p>
+
+<hr>
+
+<h3>Single user — picking the right chunk size</h3>
+
+<p>Chunk size controls the granularity of what gets embedded and retrieved. The goal is: each chunk should contain exactly one complete thought — no more, no less.</p>
+
+<pre><code class="language-python">from llama_index.core.node_parser import SentenceSplitter
+
+# The starting point for most prose documents
+splitter = SentenceSplitter(
+    chunk_size=512,       # tokens — roughly 350 words
+    chunk_overlap=50,     # tokens bridging adjacent chunks
+)
+
+nodes = splitter.get_nodes_from_documents(documents)
+
+# Inspect what you actually got
+for node in nodes[:3]:
+    print(f&quot;tokens ≈ {len(node.text.split()) * 1.3:.0f}&quot;)
+    print(f&quot;text: {node.text[:120]}...&quot;)
+    print()</code></pre>
+
+<p>The two failure modes to explain in every interview:</p>
+
+<p><strong>Too small (< 100 tokens):</strong> Each chunk is a sentence fragment. The embedding represents a narrow slice with no context. When retrieved, the LLM gets: "The window is 30 days." — no subject, no explanation of what it applies to. Answer quality collapses.</p>
+
+<p><strong>Too large (> 1500 tokens):</strong> The chunk contains three different topics. The embedding is an average of all of them — a blurry semantic blob. A specific question about topic A has low cosine similarity because the embedding is diluted by topics B and C. Precision collapses.</p>
+
+<p>The sweet spot depends on document type:</p>
+<ul><li>Prose / articles → 256–512 tokens</li><li>Source code → <code>CodeSplitter</code>, 40–60 lines</li><li>Dense technical manuals → <code>HierarchicalNodeParser</code>, 2048 parent / 512 child</li><li>FAQ / structured data → 128–256 tokens</li></ul>
+
+<hr>
+
+<h3>Scale to millions — adaptive chunking strategies</h3>
+
+<p>At scale, a single global chunk size is wrong for every document type in a heterogeneous corpus. The production approach:</p>
+
+<pre><code class="language-python">from llama_index.core.node_parser import (
+    SentenceSplitter, CodeSplitter, HierarchicalNodeParser
+)
+
+# Route documents to the right splitter based on metadata
+def get_splitter(doc):
+    mime = doc.metadata.get(&quot;mime_type&quot;, &quot;&quot;)
+    if &quot;python&quot; in mime or doc.metadata.get(&quot;file_name&quot;,&quot;&quot;).endswith(&quot;.py&quot;):
+        return CodeSplitter(language=&quot;python&quot;, chunk_lines=40)
+    elif doc.metadata.get(&quot;page_count&quot;, 0) &gt; 50:
+        return HierarchicalNodeParser.from_defaults(
+            chunk_sizes=[2048, 512, 128]
+        )
+    else:
+        return SentenceSplitter(chunk_size=512, chunk_overlap=50)
+
+# At ingestion time:
+for doc in documents:
+    splitter = get_splitter(doc)
+    nodes = splitter.get_nodes_from_documents([doc])
+    pipeline.run(nodes=nodes)</code></pre>
+
+<p>Also measure retrieval quality by chunk size on your actual data — run 20 representative queries and check whether the answer is in the top-3 retrieved chunks. This takes 30 minutes and avoids weeks of debugging wrong answers.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Approach</th><th>Single global chunk size</th><th>Per-type adaptive chunking</th></tr></thead><tbody>
+<tr><td>Setup</td><td>1 parameter</td><td>Router logic + per-type config</td></tr>
+<tr><td>Works well for</td><td>Homogeneous corpus (all PDFs, all articles)</td><td>Mixed corpus (code + docs + FAQs)</td></tr>
+<tr><td>Retrieval precision</td><td>Good if corpus is uniform</td><td>Better across all document types</td></tr>
+<tr><td>Overlap handling</td><td>Fixed overlap everywhere</td><td>Tuned per type (code needs no overlap)</td></tr>
+<tr><td>Maintenance</td><td>None</td><td>Update router when new document types added</td></tr>
+<tr><td>Risk</td><td>Wrong size for minority doc types</td><td>Routing bugs create inconsistent chunking</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> The answer they want is: chunk size is a precision vs. recall tradeoff on the embedding. Small = precise but fragmented. Large = contextual but diluted. Then mention <code>chunk_overlap</code> prevents information loss at boundaries. Interviewers at Cohere and Databricks specifically probe whether you have measured this on real data.</p>
+
+<hr>
+
+<h2>Q3 — RAG vs fine-tuning — when do you use each, and can you use both?</h2>
+
+<p><strong>Asked at:</strong> Google · Meta · Anthropic · Mistral · Hugging Face · Together AI</p>
+
+<p><strong>Frequency:</strong> ★★★★☆ — the classic ML design question, appears in system design and ML-depth rounds</p>
+
+<hr>
+
+<h3>Single user — the mental model</h3>
+
+<p>Both approaches ground the model in domain knowledge. They do it in completely different places:</p>
+
+<pre><code class="language-">Fine-tuning:  knowledge baked INTO model weights
+              └─ updated at training time
+              └─ frozen after deployment
+
+RAG:          knowledge injected INTO the context window
+              └─ updated at query time
+              └─ always fresh</code></pre>
+
+<p>When to choose RAG:</p>
+<ul><li>Knowledge changes frequently (wiki updated daily, prices change hourly)</li><li>You need to cite sources ("as per deployment-guide.txt, line 42")</li><li>Data is private and must not be baked into a shared model</li><li>You have < 1,000 labelled examples (not enough to fine-tune well)</li></ul>
+
+<p>When to choose fine-tuning:</p>
+<ul><li>You need the model to adopt a specific tone, persona, or output format</li><li>The domain has vocabulary the base model does not know (rare medical terms, internal jargon)</li><li>Low-latency is critical and you cannot afford retrieval RTT</li><li>Task is classification or extraction, not open-ended Q&A</li></ul>
+
+<p>When to use both (RAFT — Retrieval-Augmented Fine-Tuning):</p>
+<ul><li>Fine-tune the model on (question, retrieved_context, answer) triples from your domain</li><li>The model learns both the vocabulary AND how to reason over retrieved chunks</li><li>Best accuracy, highest cost to build and maintain</li></ul>
+
+<pre><code class="language-python"># RAFT training data format
+training_example = {
+    &quot;question&quot;: &quot;What is the staging rollback procedure?&quot;,
+    &quot;context&quot;: [
+        &quot;chunk_A: kubectl rollout undo deployment/app -n staging&quot;,
+        &quot;chunk_B: Run smoke tests after rollback completes&quot;,
+        &quot;distractor_C: Production uses Helm, not kubectl&quot;,  # RAFT trains model to ignore distractors
+    ],
+    &quot;answer&quot;: &quot;Run: kubectl rollout undo deployment/app -n staging, then verify with smoke tests.&quot;
+}</code></pre>
+
+<hr>
+
+<h3>Scale to millions — which scales better</h3>
+
+<p>At 10M documents, fine-tuning does not scale at all — the model cannot hold 10M documents in its weights. RAG scales naturally because you just add more nodes to the vector store. The model stays the same; the knowledge base grows independently.</p>
+
+<p>Fine-tuning is frozen the moment training ends. A document updated tomorrow does not affect a fine-tuned model. RAG reflects document updates after the next ingestion run.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Dimension</th><th>RAG</th><th>Fine-tuning</th><th>RAG + Fine-tuning (RAFT)</th></tr></thead><tbody>
+<tr><td>Knowledge freshness</td><td>Always current</td><td>Frozen at training</td><td>Frozen tone, fresh knowledge</td></tr>
+<tr><td>Citation / attribution</td><td>Built-in via source_nodes</td><td>None</td><td>Partial</td></tr>
+<tr><td>Data privacy</td><td>Docs stay external</td><td>Baked into weights (risky)</td><td>Depends on deployment</td></tr>
+<tr><td>Cost to update</td><td>Re-ingest changed docs</td><td>Full retrain (~$100–$10k+)</td><td>Retrain + re-ingest</td></tr>
+<tr><td>Handles new vocabulary</td><td>Only if in retrieved chunk</td><td>Yes — learned in weights</td><td>Best of both</td></tr>
+<tr><td>Scales to 10M docs</td><td>Yes — just a bigger vector DB</td><td>No — weights are fixed size</td><td>Yes (RAG component scales)</td></tr>
+<tr><td>Best accuracy</td><td>Good</td><td>Good for narrow tasks</td><td>Best overall</td></tr>
+<tr><td>Time to production</td><td>Days</td><td>Weeks</td><td>Months</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> The answer interviewers want: "Use RAG for knowledge, fine-tuning for behaviour. If you need both, RAFT trains the model to reason over retrieved context rather than memorise facts." Anyone who says "fine-tuning is better than RAG" without qualification fails the tradeoff dimension.</p>
+
+<hr>
+
+<h2>Q4 — Your RAG system is returning wrong answers confidently. How do you debug it?</h2>
+
+<p><strong>Asked at:</strong> Amazon · Microsoft · Cohere · Scale AI · Glean · Perplexity</p>
+
+<p><strong>Frequency:</strong> ★★★★☆ — the production debugging question, especially at senior levels</p>
+
+<hr>
+
+<h3>Single user — the three-layer debugging framework</h3>
+
+<p>Wrong answers in RAG always come from one of three layers. Inspect them in this order:</p>
+
+<p><strong>Layer 1 — Retrieval failure.</strong> Check <code>response.source_nodes</code>. Are the retrieved chunks about the right topic?</p>
+
+<pre><code class="language-python">response = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+print(f&quot;Answer: {response.response}\n&quot;)
+print(&quot;=== Retrieved chunks ===&quot;)
+for i, node in enumerate(response.source_nodes):
+    print(f&quot;  [{i+1}] score={node.score:.4f}&quot;)
+    print(f&quot;       {node.node.text[:150]}...&quot;)</code></pre>
+
+<p>If scores are below 0.6 or chunks are about the wrong topic: the retriever is failing. Fix: re-examine chunk size, embed model, or add hybrid BM25 search.</p>
+
+<p><strong>Layer 2 — Synthesis failure.</strong> If the right chunks were retrieved but the answer is wrong, the LLM is hallucinating or ignoring context. Inspect the full prompt:</p>
+
+<pre><code class="language-python">from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
+debug = LlamaDebugHandler(print_trace_on_end=False)
+Settings.callback_manager = CallbackManager([debug])
+
+response = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+llm_calls = debug.get_llm_inputs_outputs()
+print(&quot;=== Full prompt sent to LLM ===&quot;)
+print(llm_calls[0].inputs[&quot;messages&quot;])</code></pre>
+
+<p>If the context is there but the LLM answered from training data: switch to <code>response_mode="refine"</code> or increase prompt instruction strength ("Answer ONLY from the provided context. Do not use prior knowledge.").</p>
+
+<p><strong>Layer 3 — Data failure.</strong> Right retrieval, right synthesis, still wrong: the source document is outdated, incomplete, or never ingested.</p>
+
+<pre><code class="language-python"># Check if the document exists in the docstore
+doc_id = &quot;deployment-guide.txt&quot;
+doc = docstore.get_document(doc_id)
+print(f&quot;Ingested: {doc is not None}&quot;)
+print(f&quot;Last modified in metadata: {doc.metadata.get(&#x27;last_modified&#x27;)}&quot;)</code></pre>
+
+<hr>
+
+<h3>Scale to millions — systematic observability</h3>
+
+<p>At scale, you cannot manually inspect every wrong answer. You need automated detection:</p>
+
+<pre><code class="language-python"># Log retrieval quality on every query
+class RetrievalAuditHandler(BaseCallbackHandler):
+    def on_event_end(self, event_type, payload=None, event_id=&quot;&quot;, **kwargs):
+        if event_type == CBEventType.RETRIEVE and payload:
+            nodes = payload.get(&quot;nodes&quot;, [])
+            metrics = {
+                &quot;query&quot;: payload.get(&quot;query_str&quot;,&quot;&quot;),
+                &quot;num_nodes&quot;: len(nodes),
+                &quot;top_score&quot;: nodes[0].score if nodes else 0,
+                &quot;min_score&quot;: nodes[-1].score if nodes else 0,
+                &quot;low_confidence&quot;: nodes[0].score &lt; 0.65 if nodes else True,
+            }
+            logger.info(json.dumps(metrics))  # → Datadog / CloudWatch</code></pre>
+
+<p>Alert when <code>top_score < 0.65</code> — this is the single metric most predictive of a wrong answer. Weekly: sample 50 queries manually and check source_nodes. Build an eval set from engineer thumbs-down feedback and run RAGAS faithfulness weekly.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Debugging approach</th><th>Single-query manual inspection</th><th>Automated monitoring at scale</th></tr></thead><tbody>
+<tr><td>Setup</td><td>None — use LlamaDebugHandler</td><td>Requires structured logging infra</td></tr>
+<tr><td>Coverage</td><td>One query at a time</td><td>Every query, 24/7</td></tr>
+<tr><td>Detail</td><td>Full prompt visible</td><td>Aggregated metrics</td></tr>
+<tr><td>Time to find a bug</td><td>Minutes (for that query)</td><td>Hours (pattern emerges across queries)</td></tr>
+<tr><td>Cost</td><td>Free</td><td>Infra + logging costs</td></tr>
+<tr><td>Catches silent regressions</td><td>No</td><td>Yes — alerts on score drops</td></tr>
+<tr><td>Best for</td><td>Development + initial debugging</td><td>Production monitoring</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> The answer they want: "I start by checking source_nodes — if the scores are low, retrieval is the problem. If scores are high but the answer is wrong, it's a synthesis problem. If both are fine but the answer is still wrong, the document might not be in the corpus." This layered approach shows systematic thinking, not guessing.</p>
+
+<hr>
+
+<h2>Q5 — How do you handle hybrid search — combining dense vector search with BM25?</h2>
+
+<p><strong>Asked at:</strong> Elastic · OpenAI · Weaviate · Databricks · Glean · Perplexity</p>
+
+<p><strong>Frequency:</strong> ★★★☆☆ — common at companies building search infrastructure</p>
+
+<hr>
+
+<h3>Single user — why you need both</h3>
+
+<p>Vector search misses exact terms. BM25 misses semantic intent. One query shows the problem immediately:</p>
+
+<pre><code class="language-">Query: &quot;kubectl rollout undo v1.24.2&quot;
+
+Vector search result:  &quot;To revert a deployment, use the rollback command...&quot; (score: 0.71)
+BM25 result:           &quot;kubectl rollout undo v1.24.2 --record=true&quot;       (score: 0.94)</code></pre>
+
+<p>The vector search found semantically related content but missed the exact version string. BM25 found the exact string. Neither alone is sufficient for a mixed corpus.</p>
+
+<pre><code class="language-python">from llama_index.core.retrievers import QueryFusionRetriever
+from llama_index.retrievers.bm25 import BM25Retriever
+
+vector_retriever = index.as_retriever(similarity_top_k=10)
+bm25_retriever   = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=10)
+
+hybrid = QueryFusionRetriever(
+    retrievers=[vector_retriever, bm25_retriever],
+    similarity_top_k=5,
+    num_queries=1,             # disable query rewriting for simplest form
+    mode=&quot;reciprocal_rerank&quot;,  # Reciprocal Rank Fusion (RRF)
+)
+
+nodes = hybrid.retrieve(&quot;kubectl rollout undo v1.24.2&quot;)</code></pre>
+
+<p><strong>Reciprocal Rank Fusion (RRF):</strong> Each retriever returns a ranked list. A node's fused score is <code>sum(1 / (rank + 60))</code> across all lists. Nodes that appear near the top in multiple lists score highest. The constant 60 prevents top-ranked items from dominating too strongly.</p>
+
+<hr>
+
+<h3>Scale to millions — production hybrid search</h3>
+
+<p>At scale, running two separate retrieval systems in serial adds latency. The production approach is async parallel:</p>
+
+<pre><code class="language-python">hybrid = QueryFusionRetriever(
+    retrievers=[vector_retriever, bm25_retriever],
+    similarity_top_k=5,
+    num_queries=4,        # LLM generates 4 query variants — improves recall
+    mode=&quot;reciprocal_rerank&quot;,
+    use_async=True,       # retrieves from both in parallel
+)
+
+# Both retrievers run concurrently; total latency = max(vector_latency, bm25_latency)
+# instead of vector_latency + bm25_latency
+nodes = await hybrid.aretrieve(&quot;kubectl rollout undo v1.24.2&quot;)</code></pre>
+
+<p>At 10M documents, keep BM25 in Elasticsearch (built for text search at scale) and dense vectors in Pinecone. Merge results at the application layer using RRF before sending to the synthesizer.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Retriever</th><th>Vector search only</th><th>BM25 only</th><th>Hybrid (RRF)</th></tr></thead><tbody>
+<tr><td>Semantic queries</td><td>Excellent</td><td>Poor</td><td>Excellent</td></tr>
+<tr><td>Exact term queries</td><td>Poor</td><td>Excellent</td><td>Excellent</td></tr>
+<tr><td>Version numbers / codes</td><td>Poor</td><td>Excellent</td><td>Excellent</td></tr>
+<tr><td>Implementation complexity</td><td>Low</td><td>Low</td><td>Medium</td></tr>
+<tr><td>Latency</td><td>Low</td><td>Very low</td><td>Low (with async)</td></tr>
+<tr><td>Infrastructure</td><td>Vector DB</td><td>Elasticsearch / Whoosh</td><td>Both</td></tr>
+<tr><td>Recall on mixed queries</td><td>~70%</td><td>~70%</td><td>~90%+</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> Name RRF specifically. Explain why 60 is used as the constant. Then explain that <code>num_queries=4</code> in <code>QueryFusionRetriever</code> generates query variants via the LLM to increase recall further — this shows depth beyond the basic answer.</p>
+
+<hr>
+
+<h2>Q6 — How do you evaluate a RAG pipeline? What metrics do you measure?</h2>
+
+<p><strong>Asked at:</strong> Google · Meta · Cohere · Hugging Face · Patronus AI · Arize</p>
+
+<p><strong>Frequency:</strong> ★★★☆☆ — appears in ML-depth rounds, especially at companies with eval infrastructure</p>
+
+<hr>
+
+<h3>Single user — the four RAGAS metrics</h3>
+
+<p>RAGAS (Retrieval-Augmented Generation Assessment) separates retrieval quality from generation quality. Evaluate each independently:</p>
+
+<pre><code class="language-python">from ragas import evaluate
+from ragas.metrics import (
+    faithfulness,        # Is the answer grounded in the retrieved context?
+    answer_relevancy,    # Is the answer relevant to the question?
+    context_precision,   # Are the retrieved chunks actually relevant?
+    context_recall,      # Were all relevant chunks retrieved?
+)
+from datasets import Dataset
+
+eval_dataset = Dataset.from_list([
+    {
+        &quot;question&quot;:  &quot;How do I roll back a deployment?&quot;,
+        &quot;answer&quot;:    response.response,
+        &quot;contexts&quot;:  [n.node.text for n in response.source_nodes],
+        &quot;ground_truth&quot;: &quot;Run kubectl rollout undo deployment/app -n staging&quot;
+    },
+    # ... more examples
+])
+
+result = evaluate(eval_dataset, metrics=[faithfulness, answer_relevancy,
+                                          context_precision, context_recall])
+print(result)
+# {&#x27;faithfulness&#x27;: 0.89, &#x27;answer_relevancy&#x27;: 0.91,
+#  &#x27;context_precision&#x27;: 0.76, &#x27;context_recall&#x27;: 0.83}</code></pre>
+
+<p>What each metric catches:</p>
+
+<table><thead><tr><th>Metric</th><th>What it measures</th><th>Low score means</th></tr></thead><tbody>
+<tr><td>Faithfulness</td><td>Answer claims are in context</td><td>LLM is hallucinating</td></tr>
+<tr><td>Answer relevancy</td><td>Answer addresses the question</td><td>Synthesis is off-topic</td></tr>
+<tr><td>Context precision</td><td>Retrieved chunks are relevant</td><td>Retriever has too much noise</td></tr>
+<tr><td>Context recall</td><td>Right chunks were retrieved</td><td>Retriever is missing relevant docs</td></tr>
+</tbody></table>
+
+<hr>
+
+<h3>Scale to millions — continuous evaluation</h3>
+
+<p>For a live system with 500 queries/day, you cannot manually evaluate everything. The production approach:</p>
+
+<pre><code class="language-python"># Sample 5% of queries for automated evaluation
+import random
+
+if random.random() &lt; 0.05:
+    # Async evaluation — doesn&#x27;t block the user response
+    asyncio.create_task(evaluate_query(
+        question=query_str,
+        answer=response.response,
+        contexts=[n.node.text for n in response.source_nodes],
+    ))
+
+# Weekly: run full RAGAS eval on 200-question labelled set
+# Alert if faithfulness drops below 0.80 (indicates LLM starting to hallucinate)
+# Alert if context_recall drops below 0.75 (indicates retrieval degradation)</code></pre>
+
+<p>Build the labelled question set from engineer feedback (thumbs-down → label as bad example, thumbs-up → label as good). After 2 weeks, you have 50–100 labelled examples that reflect real usage.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Evaluation approach</th><th>Manual spot-check</th><th>RAGAS automated eval</th></tr></thead><tbody>
+<tr><td>Setup</td><td>None</td><td>Labelled eval set + RAGAS install</td></tr>
+<tr><td>Coverage</td><td>Sparse — what you remember to check</td><td>Systematic — same 200 questions every week</td></tr>
+<tr><td>Measures retrieval separately</td><td>Only if you check source_nodes</td><td>Yes — context_precision and context_recall</td></tr>
+<tr><td>Detects regressions</td><td>No — no baseline</td><td>Yes — compare to last week's scores</td></tr>
+<tr><td>Cost</td><td>Engineer time</td><td>LLM-as-judge costs (~$0.01/query)</td></tr>
+<tr><td>Accuracy</td><td>Subjective</td><td>Measurable, reproducible</td></tr>
+<tr><td>Best for</td><td>Initial development</td><td>Production monitoring + regression detection</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> Name all four RAGAS metrics and what failure each catches. The insight interviewers look for: "faithfulness low means the LLM is ignoring the context; context_recall low means the retriever missed relevant chunks — these require completely different fixes." Conflating them is the most common wrong answer.</p>
+
+<hr>
+
+<h2>Q7 — How do you keep your RAG knowledge base fresh when documents update daily?</h2>
+
+<p><strong>Asked at:</strong> Amazon · LinkedIn · Stripe · Notion · Atlassian · Salesforce</p>
+
+<p><strong>Frequency:</strong> ★★★☆☆ — appears in system design rounds at companies with large document corpora</p>
+
+<hr>
+
+<h3>Single user — content hashing for deduplication</h3>
+
+<p>The naive solution — delete everything and re-ingest daily — costs the same whether 1 doc changed or 10,000 did. The correct solution uses content hashing:</p>
+
+<pre><code class="language-python">from llama_index.core.ingestion import IngestionPipeline, DocstoreStrategy
+from llama_index.core.storage.docstore import SimpleDocumentStore
+
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(), embed_model],
+    docstore=SimpleDocumentStore(),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)
+
+# Daily run — only processes documents whose content hash changed
+changed_docs = fetch_documents_modified_since_yesterday()
+nodes = pipeline.run(documents=changed_docs)
+print(f&quot;Re-embedded {len(nodes)} nodes from {len(changed_docs)} changed documents&quot;)
+# On a stable day: &quot;Re-embedded 0 nodes from 0 changed documents&quot;</code></pre>
+
+<p><code>UPSERTS_AND_DELETE</code> does three things: if a document is new → ingest. If changed → re-ingest and delete old nodes from the vector store. If unchanged → skip. Without the delete step, your vector store accumulates stale embeddings from old document versions indefinitely.</p>
+
+<hr>
+
+<h3>Scale to millions — incremental ingestion with change detection</h3>
+
+<p>At 10M documents, even fetching all document hashes to check for changes is expensive. The production approach layers multiple caches:</p>
+
+<pre><code class="language-python"># 1. Source-level change detection — cheapest possible check
+def fetch_changed_documents():
+    last_run = redis.get(&quot;last_ingestion_timestamp&quot;)
+    # Only pull docs from S3/Confluence/Notion modified after last run
+    return source_api.list_modified_since(last_run)
+
+# 2. Hash check — skip unchanged docs before any embedding
+pipeline = IngestionPipeline(
+    docstore=RedisDocumentStore.from_host_and_port(&quot;localhost&quot;, 6379),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+    cache=IngestionCache(cache=RedisCache(...)),  # skip re-embedding unchanged chunks
+)
+
+# 3. Run daily via cron — only touches changed documents
+changed = fetch_changed_documents()  # e.g., 500 out of 10M
+nodes = pipeline.run(documents=changed, num_workers=4)
+redis.set(&quot;last_ingestion_timestamp&quot;, datetime.now().isoformat())</code></pre>
+
+<p>A 10M document corpus updated daily with 0.1% change rate (10,000 docs/day) costs ~$2/day in embed API calls. Without deduplication, the same corpus costs ~$2,000/day.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Approach</th><th>Full re-ingest daily</th><th>Incremental with hash deduplication</th></tr></thead><tbody>
+<tr><td>Implementation</td><td>Simple — delete all, re-ingest</td><td>DocStore + change detection logic</td></tr>
+<tr><td>API cost</td><td>Re-embeds everything every day</td><td>Only changed chunks</td></tr>
+<tr><td>Correctness</td><td>Always fresh</td><td>Depends on change detection reliability</td></tr>
+<tr><td>Stale node cleanup</td><td>Automatic (delete all)</td><td>Requires UPSERTS_AND_DELETE strategy</td></tr>
+<tr><td>Failure recovery</td><td>Re-run from scratch</td><td>Idempotent — safe to retry</td></tr>
+<tr><td>Scales to 10M docs</td><td>27-hour run, unusable</td><td>30-second run</td></tr>
+<tr><td>Risk</td><td>Cost and time explosion</td><td>Change detection bug = missed updates</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> Interviewers want <code>UPSERTS_AND_DELETE</code> named specifically, with the reason: without delete, old node versions accumulate and pollute retrieval. The cost example ($2 vs $2,000/day) lands well in system design rounds.</p>
+
+<hr>
+
+<h2>Q8 — How does re-ranking improve retrieval quality, and when is the added latency worth it?</h2>
+
+<p><strong>Asked at:</strong> Cohere · Microsoft · Perplexity · Glean · Vectara · Jina AI</p>
+
+<p><strong>Frequency:</strong> ★★★☆☆ — common at companies whose product is search or RAG-as-a-service</p>
+
+<hr>
+
+<h3>Single user — bi-encoder vs cross-encoder</h3>
+
+<p>The retriever uses a bi-encoder: it embeds the query and each chunk independently, then computes cosine similarity. This is fast (one embed per query, one per chunk at index time) but imprecise — the query and chunk never "see" each other during scoring.</p>
+
+<p>A cross-encoder re-ranks by processing (query, chunk) jointly. It sees the full interaction between query tokens and chunk tokens, giving much more accurate relevance scores:</p>
+
+<pre><code class="language-python">from llama_index.core.postprocessor import LLMRerank, SentenceTransformerRerank
+
+# Option A: Cross-encoder reranker (fast, no LLM needed)
+reranker = SentenceTransformerRerank(
+    model=&quot;cross-encoder/ms-marco-MiniLM-L-6-v2&quot;,
+    top_n=3,   # rerank 10, keep best 3
+)
+
+# Option B: LLM reranker (most accurate, slowest)
+reranker = LLMRerank(top_n=3, choice_batch_size=5)
+
+engine = index.as_query_engine(
+    similarity_top_k=10,         # cast a wide net
+    node_postprocessors=[reranker],  # then rerank to top 3
+)</code></pre>
+
+<p>The two-stage pattern is: retrieve broadly with fast bi-encoder (top-20), rerank precisely with cross-encoder (top-3). This gives near-cross-encoder accuracy at near-bi-encoder speed.</p>
+
+<hr>
+
+<h3>Scale to millions — when the latency is worth it</h3>
+
+<p>Reranking adds 100–400ms latency depending on the model. This is worth it when:</p>
+
+<ul><li>The query is ambiguous (short queries like "rollback" return noisy results)</li><li>The corpus is large (> 1M chunks, signal-to-noise in retrieval drops)</li><li>The stakes are high (medical, legal, financial — wrong answer has real consequences)</li></ul>
+
+<p>It is not worth it when:</p>
+<ul><li>Queries are specific and retrieval is already high-precision</li><li>Latency budget is tight (< 200ms SLA)</li><li>You can improve precision by tuning chunk size and embed model instead</li></ul>
+
+<pre><code class="language-python"># Cost-based routing: only rerank when retrieval confidence is low
+def get_engine(query_complexity: str):
+    if query_complexity == &quot;simple&quot;:
+        return fast_engine   # no reranker, similarity_top_k=5
+    else:
+        return quality_engine  # LLMRerank top_n=3, similarity_top_k=15</code></pre>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Approach</th><th>Bi-encoder only</th><th>Bi-encoder + cross-encoder rerank</th><th>Bi-encoder + LLM rerank</th></tr></thead><tbody>
+<tr><td>Latency</td><td>< 10ms</td><td>+100–200ms</td><td>+300–600ms</td></tr>
+<tr><td>Retrieval accuracy</td><td>Baseline</td><td>+10–15%</td><td>+20–25%</td></tr>
+<tr><td>Cost</td><td>Embed model only</td><td>Reranker model inference</td><td>LLM API cost per query</td></tr>
+<tr><td>Infrastructure</td><td>Vector DB</td><td>Vector DB + reranker model</td><td>Vector DB + LLM call</td></tr>
+<tr><td>Best for</td><td>Speed-sensitive, precise queries</td><td>Most production systems</td><td>High-stakes, complex queries</td></tr>
+<tr><td>Scales to 10M</td><td>Yes</td><td>Yes</td><td>Yes (but expensive at volume)</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> The key insight: "I retrieve top-20 with the bi-encoder because I optimise for recall at that stage — I want the right chunk to be somewhere in the candidate set. Then I rerank to top-3 for precision. These are two different objectives and they need two different models." This bi-objective framing is the answer that gets written down by interviewers.</p>
+
+<hr>
+
+<h2>Q9 — How do you scale a RAG ingestion pipeline to 10 million documents?</h2>
+
+<p><strong>Asked at:</strong> Google · Amazon · Databricks · Snowflake · Palantir · Anyscale</p>
+
+<p><strong>Frequency:</strong> ★★☆☆☆ — appears in senior/staff design rounds at data-heavy companies</p>
+
+<hr>
+
+<h3>Single user — single process baseline</h3>
+
+<p>The baseline pipeline for one developer:</p>
+
+<pre><code class="language-python">pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=512, chunk_overlap=50),
+        HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;),
+    ]
+)
+nodes = pipeline.run(documents=documents)  # single process, sequential</code></pre>
+
+<p>For 1,000 documents: works fine in minutes. For 10 million: fails in five specific ways.</p>
+
+<hr>
+
+<h3>Scale to millions — the five bottlenecks and their fixes</h3>
+
+<p>Each bottleneck has one targeted fix. Apply them in order — the first three give the biggest wins:</p>
+
+<pre><code class="language-">Bottleneck 1: single process
+Fix: num_workers=4 — splits document list across CPU processes via multiprocessing.Pool
+
+Bottleneck 2: re-embedding unchanged documents
+Fix: IngestionCache + UPSERTS_AND_DELETE — skip unchanged chunks entirely
+
+Bottleneck 3: everything in RAM
+Fix: RedisDocumentStore + PineconeVectorStore — persist across restarts
+
+Bottleneck 4: embed API rate limits
+Fix: local BAAI/bge model, embed_batch_size=64 — no rate limit, no per-token cost
+
+Bottleneck 5: one machine
+Fix: distributed worker pool (Celery/SQS) — horizontal scale</code></pre>
+
+<p>The fully production pipeline:</p>
+
+<pre><code class="language-python">Settings.embed_model = HuggingFaceEmbedding(
+    model_name=&quot;BAAI/bge-base-en-v1.5&quot;,
+    embed_batch_size=64,
+)
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(chunk_size=512), Settings.embed_model],
+    docstore=RedisDocumentStore.from_host_and_port(&quot;localhost&quot;, 6379),
+    vector_store=PineconeVectorStore(pinecone_index=pc.Index(&quot;wiki&quot;)),
+    cache=IngestionCache(cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379)),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)
+nodes = pipeline.run(documents=changed_docs, num_workers=4)</code></pre>
+
+<p>At 10M documents with 0.1% daily change rate:</p>
+<ul><li>Without fixes: 27-hour daily run, ~$2,000/day in embed costs</li><li>With all fixes: 30-second daily run, ~$2/day</li></ul>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Concern</th><th>Single-process baseline</th><th>Full production pipeline</th></tr></thead><tbody>
+<tr><td>Setup complexity</td><td>5 lines</td><td>30+ lines + Redis + Pinecone</td></tr>
+<tr><td>Daily ingestion time (10M docs, 1% change)</td><td>27 hours</td><td>~5 minutes</td></tr>
+<tr><td>Cost per daily run</td><td>$2,000</td><td>$2</td></tr>
+<tr><td>Survives restart</td><td>No — RAM only</td><td>Yes — Redis + Pinecone</td></tr>
+<tr><td>Horizontal scale</td><td>1 machine max</td><td>N workers via SQS/Celery</td></tr>
+<tr><td>Failure recovery</td><td>Restart from scratch</td><td>Idempotent — safe to re-run</td></tr>
+<tr><td>Operational overhead</td><td>None</td><td>Redis + Pinecone + workers to maintain</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> Name all five bottlenecks and state the fix for each in one sentence. Interviewers at Databricks and Snowflake specifically ask for the cost comparison — having a rough number ($2 vs $2,000/day) demonstrates that you think about production systems in economic terms, not just technical ones.</p>
+
+<hr>
+
+<h2>Q10 — When would you use an agent instead of a standard RAG query engine?</h2>
+
+<p><strong>Asked at:</strong> OpenAI · Anthropic · Google DeepMind · Adept · Cognition · Cohere</p>
+
+<p><strong>Frequency:</strong> ★★☆☆☆ — increasingly common as agentic AI becomes standard, especially at frontier AI companies</p>
+
+<hr>
+
+<h3>Single user — the decision boundary</h3>
+
+<p>A query engine handles one thing: retrieve context → synthesize answer. It is stateless, single-step, and cheap. An agent runs a reasoning loop — it can call tools multiple times, make conditional decisions, and accumulate state across steps.</p>
+
+<p>The boundary is the question itself:</p>
+
+<pre><code class="language-">&quot;What is the staging rollback procedure?&quot;
+→ Single retrieval, single synthesis. Use query engine.
+
+&quot;Compare the staging and production rollback procedures and tell me if they would
+ behave differently under a network partition.&quot;
+→ Step 1: retrieve staging procedure
+→ Step 2: retrieve production procedure
+→ Step 3: retrieve network partition failure modes
+→ Step 4: reason across all three
+→ Multi-step, conditional. Use agent.</code></pre>
+
+<pre><code class="language-python">from llama_index.core.agent import ReActAgent
+from llama_index.core.tools import QueryEngineTool
+
+agent = ReActAgent.from_tools(
+    tools=[
+        QueryEngineTool.from_defaults(
+            query_engine=staging_engine,
+            name=&quot;staging_docs&quot;,
+            description=&quot;Search staging environment documentation.&quot;
+        ),
+        QueryEngineTool.from_defaults(
+            query_engine=production_engine,
+            name=&quot;production_docs&quot;,
+            description=&quot;Search production environment documentation.&quot;
+        ),
+    ],
+    llm=Settings.llm,
+    max_iterations=8,
+)
+
+response = agent.chat(
+    &quot;Compare staging vs production rollback. Any differences that could cause &quot;
+    &quot;staging tests to pass but production rollback to fail?&quot;
+)</code></pre>
+
+<hr>
+
+<h3>Scale to millions — gating agent use for cost control</h3>
+
+<p>An agent averages 3–5 LLM calls per query. At 500 queries/day, uncontrolled agent use costs 3–5× more than a query engine. The production approach: route by query complexity.</p>
+
+<pre><code class="language-python">import re
+
+AGENT_SIGNALS = [&quot;compare&quot;, &quot;difference between&quot;, &quot;find all&quot;, &quot;given x then y&quot;,
+                 &quot;what if&quot;, &quot;across&quot;, &quot;both&quot;, &quot;versus&quot;, &quot;vs&quot;]
+
+def route_query(query: str) -&gt; str:
+    q = query.lower()
+    if any(signal in q for signal in AGENT_SIGNALS):
+        return &quot;agent&quot;
+    if len(query.split()) &gt; 20:   # long queries often need multi-step reasoning
+        return &quot;agent&quot;
+    return &quot;query_engine&quot;
+
+# Fast path: 80% of queries
+if route_query(user_query) == &quot;query_engine&quot;:
+    response = await engine.aquery(user_query)
+# Quality path: 20% of queries
+else:
+    response = await agent.achat(user_query)</code></pre>
+
+<p>This keeps the median latency at ~1s (query engine) while handling complex questions at ~5s (agent), without applying agent overhead universally.</p>
+
+<hr>
+
+<h3>Pros and cons</h3>
+
+<table><thead><tr><th>Dimension</th><th>Query engine</th><th>ReAct agent</th></tr></thead><tbody>
+<tr><td>LLM calls per query</td><td>1–2</td><td>3–10</td></tr>
+<tr><td>Latency</td><td>1–2 seconds</td><td>5–30 seconds</td></tr>
+<tr><td>Cost per query</td><td>~$0.001</td><td>~$0.005–$0.02</td></tr>
+<tr><td>Handles multi-step questions</td><td>No</td><td>Yes</td></tr>
+<tr><td>Handles external tool calls</td><td>No</td><td>Yes (FunctionTool)</td></tr>
+<tr><td>Handles multi-turn conversation</td><td>No</td><td>Yes (memory buffer)</td></tr>
+<tr><td>Predictability</td><td>High — deterministic flow</td><td>Lower — LLM chooses steps</td></tr>
+<tr><td>Debugging</td><td>Check source_nodes</td><td>Check each step's reasoning</td></tr>
+<tr><td>Best for</td><td>Single-hop Q&A, definitions, summaries</td><td>Comparisons, analysis, conditional reasoning</td></tr>
+</tbody></table>
+
+<p><strong>The interviewer signal:</strong> The answer interviewers want: "I gate on query complexity — simple queries go to the query engine, complex ones to the agent. The signal is words like 'compare', 'find all', 'given X then Y'. Unconstrained agent use costs 5× more with no benefit on simple queries." This shows you think about production economics, not just capability.</p>
+
+<hr>
+
+<h2>Quick reference</h2>
+
+<table><thead><tr><th>#</th><th>Question</th><th>Companies</th><th>Key answer terms</th></tr></thead><tbody>
+<tr><td>1</td><td>Design a RAG system end-to-end</td><td>Google, Meta, Amazon, Microsoft</td><td>Loader → chunker → embedder → vector store → retriever → synthesizer</td></tr>
+<tr><td>2</td><td>How do you choose chunk size?</td><td>Amazon, Cohere, Databricks</td><td>Precision vs recall tradeoff, chunk_overlap, measure on real data</td></tr>
+<tr><td>3</td><td>RAG vs fine-tuning</td><td>Google, Meta, Anthropic</td><td>Knowledge vs behaviour, RAFT for both</td></tr>
+<tr><td>4</td><td>Debug wrong answers</td><td>Amazon, Microsoft, Cohere</td><td>Layer 1: retrieval. Layer 2: synthesis. Layer 3: data</td></tr>
+<tr><td>5</td><td>Hybrid search</td><td>Elastic, OpenAI, Weaviate</td><td>BM25 + vector, Reciprocal Rank Fusion, async parallel</td></tr>
+<tr><td>6</td><td>Evaluate a RAG pipeline</td><td>Google, Cohere, Hugging Face</td><td>RAGAS: faithfulness, context precision, context recall, answer relevancy</td></tr>
+<tr><td>7</td><td>Keep knowledge base fresh</td><td>Amazon, LinkedIn, Stripe</td><td>Content hashing, UPSERTS_AND_DELETE, incremental ingestion</td></tr>
+<tr><td>8</td><td>Re-ranking</td><td>Cohere, Microsoft, Perplexity</td><td>Bi-encoder for recall, cross-encoder for precision, top-20 → top-3</td></tr>
+<tr><td>9</td><td>Scale ingestion to 10M docs</td><td>Google, Amazon, Databricks</td><td>5 bottlenecks: parallelism, caching, storage, rate limits, distribution</td></tr>
+<tr><td>10</td><td>Agent vs query engine</td><td>OpenAI, Anthropic, DeepMind</td><td>Multi-step = agent, gate by complexity, 3–5× cost difference</td></tr>
+</tbody></table>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-11-agents-when-one-retrieval-is-not-enough.html"><div class="nav-dir">← Previous</div>Agents — When One Retrieval Is Not Enough</a></nav>
+</main>
+</body>
+</html>
