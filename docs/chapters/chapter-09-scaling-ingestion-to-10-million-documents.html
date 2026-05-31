@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch09: Scaling Ingestion to 10 Million Documents — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);box-shadow:3px 3px 0 var(--text)}
+.ch-nav-next{text-align:right;margin-left:auto}
+.nav-dir{font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:4px}
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 09</div>
+    <h1>Chapter 9: Scaling Ingestion to 10 Million Documents</h1>
+  </header>
+  <div class="content">
+
+<hr>
+
+<h2>The problem this chapter solves</h2>
+
+<p>Everything we built in Chapters 2–5 works correctly at small scale. The architecture is right. The abstractions are right. But five specific bottlenecks appear as you scale that will make the pipeline unusable without targeted fixes.</p>
+
+<p>This chapter names each bottleneck, explains exactly why it appears, and shows the precise code change that fixes it. None of these require changing the pipeline structure — you are swapping backends, not rewriting logic.</p>
+
+<hr>
+
+<h2>The five bottlenecks</h2>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 380" xmlns="http://www.w3.org/2000/svg"><title>Five Bottlenecks and Fixes</title><rect x="25.5" y="32.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="29.0" width="175" height="42" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="42.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Bottleneck 1</text><text x="110.0" y="58.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Single process</text><rect x="485.5" y="32.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="29.0" width="175" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="42.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Fix: num_workers</text><text x="570.0" y="58.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">multiprocessing.Pool</text><line x1="197.5" y1="50.0" x2="482.5" y2="50.0" stroke="#888" stroke-width="2"  stroke-linecap="round"/><polygon points="471.5,55.0 482.5,50.0 471.5,45.0" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="25.5" y="92.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="89.0" width="175" height="42" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="102.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Bottleneck 2</text><text x="110.0" y="118.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Re-embedding all</text><rect x="485.5" y="92.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="89.0" width="175" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="102.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Fix: IngestionCache</text><text x="570.0" y="118.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">DocstoreStrategy</text><line x1="197.5" y1="110.0" x2="482.5" y2="110.0" stroke="#888" stroke-width="2"  stroke-linecap="round"/><polygon points="471.5,115.0 482.5,110.0 471.5,105.0" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="25.5" y="152.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="149.0" width="175" height="42" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="162.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Bottleneck 3</text><text x="110.0" y="178.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">All data in RAM</text><rect x="485.5" y="152.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="149.0" width="175" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="162.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Fix: Redis + Chroma</text><text x="570.0" y="178.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Remote stores</text><line x1="197.5" y1="170.0" x2="482.5" y2="170.0" stroke="#888" stroke-width="2"  stroke-linecap="round"/><polygon points="471.5,175.0 482.5,170.0 471.5,165.0" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="25.5" y="212.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="209.0" width="175" height="42" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="222.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Bottleneck 4</text><text x="110.0" y="238.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">API rate limits</text><rect x="485.5" y="212.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="209.0" width="175" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="222.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Fix: Local embed model</text><text x="570.0" y="238.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">batch_size=64+</text><line x1="197.5" y1="230.0" x2="482.5" y2="230.0" stroke="#888" stroke-width="2"  stroke-linecap="round"/><polygon points="471.5,235.0 482.5,230.0 471.5,225.0" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="25.5" y="272.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="269.0" width="175" height="42" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="282.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">Bottleneck 5</text><text x="110.0" y="298.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#c0392b">One machine</text><rect x="485.5" y="272.0" width="175" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="269.0" width="175" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="282.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Fix: Worker pool</text><text x="570.0" y="298.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">shared remote stores</text><line x1="197.5" y1="290.0" x2="482.5" y2="290.0" stroke="#888" stroke-width="2"  stroke-linecap="round"/><polygon points="471.5,295.0 482.5,290.0 471.5,285.0" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<hr>
+
+<h2>Bottleneck 1: Single process</h2>
+
+<h3>Why it appears</h3>
+
+<p><code>pipeline.run()</code> with <code>num_workers=None</code> (the default) runs a single Python process. It processes documents one by one: load, split, embed, store, repeat. The embedding step calls an API (or a local model), waits for the response, then processes the next batch.</p>
+
+<p>For 10 million documents averaging 5,000 words each, single-threaded at 200ms per embed batch:</p>
+
+<pre><code class="language-">10M docs × ~10 chunks/doc = 100M chunks
+100M chunks ÷ 10 per batch = 10M API calls
+10M calls × 200ms = 2,000,000 seconds = 23 days</code></pre>
+
+<h3>The fix: <code>num_workers</code></h3>
+
+<pre><code class="language-python"># Before — single process
+nodes = pipeline.run(documents=documents)
+
+# After — 4 OS processes, each handles 1/4 of the document list
+nodes = pipeline.run(documents=documents, num_workers=4)
+
+# Async version — overlaps API I/O waits within each process
+nodes = await pipeline.arun(documents=documents, num_workers=4)</code></pre>
+
+<p>Internally, <code>num_workers</code> calls <code>multiprocessing.Pool(num_workers)</code> and uses <code>p.starmap(run_transformations, zip(node_batches, ...))</code>. Each process gets an equal slice of the node list and runs the full transformation chain independently.</p>
+
+<p>Why <code>multiprocessing</code> and not <code>threading</code>? Python's GIL prevents true thread parallelism for CPU-bound work. Separate processes bypass the GIL. The tradeoff: higher memory overhead (each process loads the embed model) and inter-process serialization cost.</p>
+
+<p>For API-based embed models (where work is I/O, not CPU), the async path (<code>arun</code>) is usually faster — it fires multiple HTTP requests concurrently within one process.</p>
+
+<hr>
+
+<h2>Bottleneck 2: Re-embedding unchanged documents</h2>
+
+<h3>Why it appears</h3>
+
+<p>Without deduplication, every pipeline run re-processes every document — even if 99% are unchanged. On a 10M document corpus running daily:</p>
+
+<ul><li>Day 1: embed 10M documents — takes hours, costs money</li><li>Day 2: 1,000 documents updated — embed all 10M again — same cost</li></ul>
+
+<p>This is pure waste. The fix has two parts: a transformation cache and a document-level deduplication strategy.</p>
+
+<h3>Fix part A: <code>IngestionCache</code> — skip unchanged chunks</h3>
+
+<pre><code class="language-python">from llama_index.core.ingestion import IngestionCache
+from llama_index.core.ingestion.cache import RedisCache
+
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(), embed_model],
+    cache=IngestionCache(
+        cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379),
+        collection=&quot;embed_cache&quot;,
+    ),
+)</code></pre>
+
+<p>Cache key = <code>hash(node_content + transformation_class + transformation_params)</code>. Same chunk, same model, same settings → cache hit, zero API call. The cache persists in Redis across restarts and deployments.</p>
+
+<h3>Fix part B: <code>DocstoreStrategy</code> — skip unchanged documents</h3>
+
+<pre><code class="language-python">from llama_index.core.ingestion import DocstoreStrategy
+from llama_index.storage.docstore.redis import RedisDocumentStore
+
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(), embed_model],
+    docstore=RedisDocumentStore.from_host_and_port(&quot;localhost&quot;, 6379),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)</code></pre>
+
+<p>The docstore stores a hash of each document's content. On re-run, it compares the incoming document hash against the stored hash. If identical → skip entirely, before chunking. If different → re-ingest and delete old nodes from the vector store.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 320" xmlns="http://www.w3.org/2000/svg"><title>Deduplication Flow</title><rect x="33.0" y="22.0" width="160" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="30.0" y="19.0" width="160" height="42" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="31.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Incoming</text><text x="110.0" y="48.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">document</text><rect x="33.0" y="102.0" width="160" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="30.0" y="99.0" width="160" height="42" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="111.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Compute</text><text x="110.0" y="128.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">content hash</text><rect x="33.0" y="179.0" width="160" height="48" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="30.0" y="176.0" width="160" height="48" rx="10" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="191.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Hash in</text><text x="110.0" y="208.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">DocStore?</text><rect x="263.0" y="179.0" width="160" height="48" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="260.0" y="176.0" width="160" height="48" rx="10" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="191.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Hash</text><text x="340.0" y="208.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">changed?</text><rect x="483.0" y="122.0" width="140" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="480.0" y="119.0" width="140" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550.0" y="131.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Skip entirely</text><text x="550.0" y="148.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">0 API calls</text><rect x="483.0" y="239.0" width="140" height="48" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="480.0" y="236.0" width="140" height="48" rx="10" fill="#fdebd0" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550.0" y="251.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Re-ingest</text><text x="550.0" y="268.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">delete old nodes</text><rect x="273.0" y="62.0" width="140" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="270.0" y="59.0" width="140" height="42" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="80.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Ingest as new</text><line x1="110.0" y1="61.0" x2="110.0" y2="99.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="105.0,88.0 110.0,99.0 115.0,88.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="110.0" y1="141.0" x2="110.0" y2="176.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="105.0,165.0 110.0,176.0 115.0,165.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="156.0" y1="176.0" x2="299.8" y2="101.0" stroke="#2980b9" stroke-width="1"  stroke-linecap="round"/><polygon points="292.3,110.5 299.8,101.0 287.7,101.7" fill="#2980b9" stroke="#2980b9" stroke-width="1" stroke-linejoin="round"/><rect x="207.9" y="128.5" width="40" height="20" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="227.9" y="143.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">No</text><line x1="190.0" y1="200.0" x2="260.0" y2="200.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="249.0,205.0 260.0,200.0 249.0,195.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><rect x="205.0" y="190.0" width="40" height="20" rx="4" fill="white" stroke="#555" stroke-width="1"/><text x="225.0" y="205.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#555">Yes</text><line x1="420.0" y1="177.1" x2="480.0" y2="160.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="470.8,167.8 480.0,160.0 468.0,158.2" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="430.0" y="158.6" width="40" height="20" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="450.0" y="173.6" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">No</text><line x1="420.0" y1="222.9" x2="480.0" y2="240.0" stroke="#e67e22" stroke-width="2"  stroke-linecap="round"/><polygon points="468.0,241.8 480.0,240.0 470.8,232.2" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><rect x="430.0" y="221.4" width="40" height="20" rx="4" fill="white" stroke="#e67e22" stroke-width="1"/><text x="450.0" y="236.4" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#e67e22">Yes</text></svg></div></p>
+
+<p>Combined result: a daily run on 10M docs where 1,000 changed takes ~30 seconds instead of hours.</p>
+
+<hr>
+
+<h2>Bottleneck 3: Everything in memory</h2>
+
+<h3>Why it appears</h3>
+
+<p><code>SimpleVectorStore</code> is a Python dict. <code>SimpleDocumentStore</code> is also in memory. At 10M nodes × 1536 floats × 4 bytes = <strong>60GB</strong> just for embeddings. Plus raw text in the docstore. A single machine cannot hold this, and it evaporates on every restart.</p>
+
+<h3>The fix: swap every storage layer</h3>
+
+<p>The swap is configuration, not code. Every storage component implements a common interface — you change the backend without touching pipeline logic.</p>
+
+<pre><code class="language-python"># Day One — everything in RAM
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(), embed_model],
+)
+# Production — everything persistent and remote
+from llama_index.storage.docstore.redis import RedisDocumentStore
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from pinecone import Pinecone, ServerlessSpec
+
+pc = Pinecone(api_key=&quot;...&quot;)
+pc.create_index(&quot;wiki&quot;, dimension=768, metric=&quot;cosine&quot;,
+                spec=ServerlessSpec(cloud=&quot;aws&quot;, region=&quot;us-east-1&quot;))
+
+pipeline = IngestionPipeline(
+    transformations=[SentenceSplitter(), embed_model],
+    docstore=RedisDocumentStore.from_host_and_port(&quot;localhost&quot;, 6379),
+    vector_store=PineconeVectorStore(pinecone_index=pc.Index(&quot;wiki&quot;)),
+    cache=IngestionCache(cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379)),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)</code></pre>
+
+<p>The pipeline <code>.run()</code> call is identical. What changed: where things get stored and retrieved.</p>
+
+<hr>
+
+<h2>Bottleneck 4: Embed API rate limits</h2>
+
+<h3>Why it appears</h3>
+
+<p>OpenAI's embedding API has rate limits: tokens per minute (TPM) and requests per minute (RPM). Hit the limit and the API returns <code>429 Too Many Requests</code>. Your pipeline stalls or crashes.</p>
+
+<p>At <code>embed_batch_size=10</code> (the default), 100M chunks = 10M API calls. Even with concurrency, you will hit TPM limits.</p>
+
+<h3>Fix A: Switch to a local embed model — no rate limit</h3>
+
+<pre><code class="language-python">from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+# Runs on your own hardware — no API, no rate limit, no per-token cost
+embed_model = HuggingFaceEmbedding(
+    model_name=&quot;BAAI/bge-base-en-v1.5&quot;,
+    embed_batch_size=64,   # 6x larger batch than OpenAI default
+    device=&quot;cuda&quot;,         # GPU if available
+)</code></pre>
+
+<h3>Fix B: Increase batch size for API models</h3>
+
+<pre><code class="language-python">from llama_index.embeddings.openai import OpenAIEmbedding
+
+embed_model = OpenAIEmbedding(
+    model=&quot;text-embedding-3-small&quot;,
+    embed_batch_size=100,  # OpenAI supports up to 2048 inputs per call
+    # Fewer API calls = less rate limit pressure + lower latency
+)</code></pre>
+
+<h3>Fix C: Async with retry</h3>
+
+<pre><code class="language-python"># arun automatically retries on 429 and overlaps concurrent requests
+nodes = await pipeline.arun(documents=documents, num_workers=4)</code></pre>
+
+<hr>
+
+<h2>Bottleneck 5: One machine, one pipeline process</h2>
+
+<h3>Why it appears</h3>
+
+<p>Even with <code>num_workers=8</code> you are limited to one machine's CPU cores. For 10M documents, even a 32-core machine with 8 workers takes 1–2 hours per run. If that machine restarts mid-run, you restart from scratch.</p>
+
+<h3>The fix: distributed worker pool</h3>
+
+<p>The <code>IngestionPipeline</code> is <strong>stateless</strong> with respect to transformation work — each batch of documents is independent. This makes it naturally distributed.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 320" xmlns="http://www.w3.org/2000/svg"><title>Distributed Worker Pool</title><rect x="243.0" y="20.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="240.0" y="17.0" width="200" height="46" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="31.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Message Queue</text><text x="340.0" y="48.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Kafka / SQS / Celery</text><rect x="35.5" y="135.0" width="155" height="56" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="32.5" y="132.0" width="155" height="56" rx="10" fill="#fff" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="151.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">Worker 1</text><text x="110.0" y="168.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">pipeline.run(batch_1)</text><rect x="235.5" y="135.0" width="155" height="56" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="232.5" y="132.0" width="155" height="56" rx="10" fill="#fff" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="310.0" y="151.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">Worker 2</text><text x="310.0" y="168.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">pipeline.run(batch_2)</text><rect x="435.5" y="135.0" width="155" height="56" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="432.5" y="132.0" width="155" height="56" rx="10" fill="#fff" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="510.0" y="151.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">Worker N</text><text x="510.0" y="168.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">pipeline.run(batch_N)</text><rect x="108.0" y="250.0" width="190" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="105.0" y="247.0" width="190" height="46" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="200.0" y="261.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Shared Redis</text><text x="200.0" y="278.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">DocStore + Cache</text><rect x="383.0" y="250.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="380.0" y="247.0" width="200" height="46" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="480.0" y="261.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Shared Pinecone</text><text x="480.0" y="278.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">VectorStore</text><line x1="295.9" y1="63.0" x2="163.7" y2="132.0" stroke="#9b59b6" stroke-width="1"  stroke-linecap="round"/><polygon points="171.1,122.5 163.7,132.0 175.7,131.3" fill="#9b59b6" stroke="#9b59b6" stroke-width="1" stroke-linejoin="round"/><line x1="132.9" y1="188.0" x2="181.2" y2="247.0" stroke="#e67e22" stroke-width="1"  stroke-linecap="round"/><polygon points="170.3,241.7 181.2,247.0 178.1,235.3" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><line x1="187.5" y1="183.0" x2="402.6" y2="247.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="390.7,248.7 402.6,247.0 393.5,239.1" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><line x1="334.2" y1="63.0" x2="317.0" y2="132.0" stroke="#9b59b6" stroke-width="1"  stroke-linecap="round"/><polygon points="314.8,120.1 317.0,132.0 324.5,122.5" fill="#9b59b6" stroke="#9b59b6" stroke-width="1" stroke-linejoin="round"/><line x1="282.0" y1="188.0" x2="223.0" y2="247.0" stroke="#e67e22" stroke-width="1"  stroke-linecap="round"/><polygon points="227.2,235.7 223.0,247.0 234.3,242.8" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><line x1="353.3" y1="188.0" x2="444.5" y2="247.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="432.5,245.2 444.5,247.0 437.9,236.8" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><line x1="372.6" y1="63.0" x2="470.3" y2="132.0" stroke="#9b59b6" stroke-width="1"  stroke-linecap="round"/><polygon points="458.5,129.7 470.3,132.0 464.2,121.6" fill="#9b59b6" stroke="#9b59b6" stroke-width="1" stroke-linejoin="round"/><line x1="432.5" y1="187.5" x2="264.8" y2="247.0" stroke="#e67e22" stroke-width="1"  stroke-linecap="round"/><polygon points="273.5,238.6 264.8,247.0 276.9,248.0" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><line x1="502.4" y1="188.0" x2="486.3" y2="247.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="484.3,235.1 486.3,247.0 494.0,237.7" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<pre><code class="language-python"># worker.py — runs on each machine
+from llama_index.core.ingestion import IngestionPipeline, DocstoreStrategy
+# ... same pipeline setup as above ...
+
+def process_batch(document_ids: List[str]):
+    docs = fetch_documents_by_id(document_ids)  # your fetcher
+    nodes = pipeline.run(documents=docs, num_workers=4)
+    print(f&quot;Worker processed {len(nodes)} nodes from {len(docs)} docs&quot;)
+
+# orchestrator.py — splits work across workers
+all_doc_ids = fetch_all_changed_document_ids()
+batch_size  = 1000
+
+for i in range(0, len(all_doc_ids), batch_size):
+    batch = all_doc_ids[i:i+batch_size]
+    celery_task.delay(batch)   # or SQS.send_message(batch)</code></pre>
+
+<p>The <code>UPSERTS_AND_DELETE</code> deduplication strategy ensures two workers processing the same document do not create duplicate embeddings — the docstore hash check is the single point of coordination.</p>
+
+<hr>
+
+<h2>The full production pipeline</h2>
+
+<pre><code class="language-python">from llama_index.core import Settings
+from llama_index.core.ingestion import (
+    IngestionPipeline, IngestionCache, DocstoreStrategy
+)
+from llama_index.core.ingestion.cache import RedisCache
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.storage.docstore.redis import RedisDocumentStore
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from pinecone import Pinecone, ServerlessSpec
+
+# 1. Explicit embed model — no surprise API fallbacks
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name=&quot;BAAI/bge-base-en-v1.5&quot;,
+    embed_batch_size=64,
+    device=&quot;cpu&quot;,   # or &quot;cuda&quot; if GPU available
+)
+
+# 2. Persistent vector store
+pc = Pinecone(api_key=&quot;YOUR_KEY&quot;)
+vector_store = PineconeVectorStore(pinecone_index=pc.Index(&quot;company-wiki&quot;))
+
+# 3. Pipeline with all five bottlenecks addressed
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=512, chunk_overlap=50),
+        Settings.embed_model,
+    ],
+    docstore=RedisDocumentStore.from_host_and_port(
+        &quot;localhost&quot;, 6379, namespace=&quot;wiki_docs&quot;
+    ),
+    vector_store=vector_store,
+    cache=IngestionCache(
+        cache=RedisCache.from_host_and_port(&quot;localhost&quot;, 6379),
+        collection=&quot;wiki_embed_cache&quot;,
+    ),
+    docstore_strategy=DocstoreStrategy.UPSERTS_AND_DELETE,
+)
+
+# 4. Run — parallel, cached, deduplicated
+changed_docs = fetch_changed_since_last_run()
+nodes = pipeline.run(documents=changed_docs, num_workers=4)
+print(f&quot;Ingested {len(nodes)} nodes from {len(changed_docs)} changed documents&quot;)</code></pre>
+
+<hr>
+
+<h2>Day One vs Production at a glance</h2>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production (10M docs)</th></tr></thead><tbody>
+<tr><td>Parallelism</td><td>Single process</td><td><code>num_workers=4+</code>, <code>arun()</code></td></tr>
+<tr><td>Embed model</td><td>OpenAI fallback, batch=10</td><td>Local BAAI/bge, batch=64</td></tr>
+<tr><td>Vector store</td><td><code>SimpleVectorStore</code> (RAM)</td><td>Pinecone / Weaviate / pgvector</td></tr>
+<tr><td>Doc store</td><td><code>SimpleDocumentStore</code> (RAM)</td><td>Redis / MongoDB</td></tr>
+<tr><td>Cache</td><td>None</td><td><code>IngestionCache</code> + Redis</td></tr>
+<tr><td>Deduplication</td><td>None</td><td><code>UPSERTS_AND_DELETE</code></td></tr>
+<tr><td>Horizontal scale</td><td>1 machine</td><td>Worker pool + message queue</td></tr>
+<tr><td>Cost per daily run</td><td>Re-embeds everything</td><td>Embeds only changed chunks</td></tr>
+<tr><td>Failure recovery</td><td>Restart from scratch</td><td>Resume from last checkpoint</td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In Chapter 10 we wire up observability — how to trace every LLM call, token count, retrieval decision, and latency across the full pipeline. When your RAG system returns a wrong answer, observability is the difference between finding the bug in 5 minutes and guessing for 3 days.</p>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-08-choosing-the-right-retriever.html"><div class="nav-dir">← Previous</div>Choosing the Right Retriever</a><a class="ch-nav-btn ch-nav-next" href="chapter-10-observability-seeing-inside-the-black-box.html"><div class="nav-dir">Next →</div>Observability — Seeing Inside the Black Box</a></nav>
+</main>
+</body>
+</html>

@@ -490,7 +490,7 @@
         <div class="stat-label">Chapters</div>
       </div>
       <div class="stat">
-        <div class="stat-num">4</div>
+        <div class="stat-num">11</div>
         <div class="stat-label">Published</div>
       </div>
       <div class="stat">
@@ -529,10 +529,7 @@
           <h2>The Problem with LLMs and Private Data</h2>
           <p>Why your chatbot can't answer questions about your company. The three naive solutions and why each fails. What RAG is, and the 5-line MVP.</p>
           <div class="ch-tags">
-            <span class="tag">RAG fundamentals</span>
-            <span class="tag">LLM limitations</span>
-            <span class="tag">SimpleDirectoryReader</span>
-            <span class="tag">5-line POC</span>
+            <span class="tag">RAG fundamentals</span><span class="tag">LLM limitations</span><span class="tag">SimpleDirectoryReader</span><span class="tag">5-line POC</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -544,10 +541,7 @@
           <h2>How LlamaIndex Reads Your Documents</h2>
           <p>The full class hierarchy — BaseComponent → BaseNode → TextNode → Document — every field explained with real code output.</p>
           <div class="ch-tags">
-            <span class="tag">Document schema</span>
-            <span class="tag">BaseNode</span>
-            <span class="tag">TextNode</span>
-            <span class="tag">Metadata</span>
+            <span class="tag">Document schema</span><span class="tag">BaseNode</span><span class="tag">TextNode</span><span class="tag">Metadata</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -557,12 +551,9 @@
         <div class="ch-num">03</div>
         <div class="ch-body">
           <h2>Chunking — Turning Documents into Searchable Pieces</h2>
-          <p>Why you can't embed a 100-page document as one unit. SentenceSplitter internals, chunk_overlap, and hierarchical chunking explained.</p>
+          <p>Why you can't embed a 100-page document. SentenceSplitter internals, chunk_overlap bridges, and HierarchicalNodeParser trees.</p>
           <div class="ch-tags">
-            <span class="tag">SentenceSplitter</span>
-            <span class="tag">chunk_size</span>
-            <span class="tag">chunk_overlap</span>
-            <span class="tag">HierarchicalNodeParser</span>
+            <span class="tag">SentenceSplitter</span><span class="tag">chunk_size</span><span class="tag">chunk_overlap</span><span class="tag">HierarchicalNodeParser</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
@@ -572,29 +563,98 @@
         <div class="ch-num">04</div>
         <div class="ch-body">
           <h2>Embeddings — Giving Text a Location in Meaning-Space</h2>
-          <p>The geometry of cosine similarity. The 4-level embed model resolution chain, the MockEmbedding silent failure, and the fatal consistency constraint.</p>
+          <p>The geometry of cosine similarity. The 4-level embed model resolution chain, the MockEmbedding silent failure, and the consistency constraint.</p>
           <div class="ch-tags">
-            <span class="tag">Cosine similarity</span>
-            <span class="tag">BaseEmbedding</span>
-            <span class="tag">Settings</span>
-            <span class="tag">BAAI/bge</span>
+            <span class="tag">Cosine similarity</span><span class="tag">BaseEmbedding</span><span class="tag">Settings</span><span class="tag">BAAI/bge</span>
           </div>
         </div>
         <div class="ch-arrow">→</div>
       </a>
 
-    </div>
+      <a class="chapter-card" href="chapters/chapter-05-the-ingestion-pipeline-the-assembly-line.html">
+        <div class="ch-num">05</div>
+        <div class="ch-body">
+          <h2>The Ingestion Pipeline — The Assembly Line</h2>
+          <p>IngestionPipeline internals: TransformComponent chain, three storage layers, DocstoreStrategy deduplication, and parallel workers for 50k docs.</p>
+          <div class="ch-tags">
+            <span class="tag">IngestionPipeline</span><span class="tag">DocstoreStrategy</span><span class="tag">IngestionCache</span><span class="tag">num_workers</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
 
-    <!-- COMING SOON -->
-    <div class="section-label">Coming Soon</div>
-    <div class="coming-grid">
-      <div class="coming-card"><div class="coming-num">05</div><h3>The Ingestion Pipeline: The Assembly Line</h3></div>
-      <div class="coming-card"><div class="coming-num">06</div><h3>How Search Works: Cosine Similarity from Scratch</h3></div>
-      <div class="coming-card"><div class="coming-num">07</div><h3>The Query Engine: From Question to Answer</h3></div>
-      <div class="coming-card"><div class="coming-num">08</div><h3>Choosing the Right Retriever</h3></div>
-      <div class="coming-card"><div class="coming-num">09</div><h3>Scaling Ingestion to 10 Million Documents</h3></div>
-      <div class="coming-card"><div class="coming-num">10</div><h3>Observability: Seeing Inside the Black Box</h3></div>
-      <div class="coming-card"><div class="coming-num">11</div><h3>Agents: When One Retrieval Isn't Enough</h3></div>
+      <a class="chapter-card" href="chapters/chapter-06-how-search-actually-works.html">
+        <div class="ch-num">06</div>
+        <div class="ch-body">
+          <h2>How Search Actually Works — Cosine Similarity from Scratch</h2>
+          <p>Trace every line from engine.query() to NodeWithScore — dot products, magnitude normalization, argsort, and why O(N) breaks at scale.</p>
+          <div class="ch-tags">
+            <span class="tag">VectorStoreQuery</span><span class="tag">get_top_k_embeddings</span><span class="tag">ANN / HNSW</span><span class="tag">NodeWithScore</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="chapter-card" href="chapters/chapter-07-the-query-engine-from-question-to-answer.html">
+        <div class="ch-num">07</div>
+        <div class="ch-body">
+          <h2>The Query Engine — From Question to Answer</h2>
+          <p>The three-stage pipeline: retriever → postprocessors → synthesizer. COMPACT vs REFINE vs TREE_SUMMARIZE and when each one wins.</p>
+          <div class="ch-tags">
+            <span class="tag">RetrieverQueryEngine</span><span class="tag">SimilarityPostprocessor</span><span class="tag">LLMRerank</span><span class="tag">ResponseMode</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="chapter-card" href="chapters/chapter-08-choosing-the-right-retriever.html">
+        <div class="ch-num">08</div>
+        <div class="ch-body">
+          <h2>Choosing the Right Retriever</h2>
+          <p>VectorIndex vs BM25 vs QueryFusion vs AutoMerging. When vector search fails on exact terms and how Reciprocal Rank Fusion fixes it.</p>
+          <div class="ch-tags">
+            <span class="tag">BM25Retriever</span><span class="tag">QueryFusionRetriever</span><span class="tag">RouterRetriever</span><span class="tag">AutoMergingRetriever</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="chapter-card" href="chapters/chapter-09-scaling-ingestion-to-10-million-documents.html">
+        <div class="ch-num">09</div>
+        <div class="ch-body">
+          <h2>Scaling Ingestion to 10 Million Documents</h2>
+          <p>The five bottlenecks that break your pipeline at scale — and the exact config change that fixes each one. From 27-hour runs to 30 seconds.</p>
+          <div class="ch-tags">
+            <span class="tag">num_workers</span><span class="tag">Redis DocStore</span><span class="tag">Pinecone</span><span class="tag">Worker pools</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="chapter-card" href="chapters/chapter-10-observability-seeing-inside-the-black-box.html">
+        <div class="ch-num">10</div>
+        <div class="ch-body">
+          <h2>Observability — Seeing Inside the Black Box</h2>
+          <p>Wire CallbackManager to every component. Trace retrieval scores, LLM prompts, token counts, and latency. Debug wrong answers in under 5 minutes.</p>
+          <div class="ch-tags">
+            <span class="tag">CallbackManager</span><span class="tag">LlamaDebugHandler</span><span class="tag">TokenCountingHandler</span><span class="tag">Tracing</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
+      <a class="chapter-card" href="chapters/chapter-11-agents-when-one-retrieval-is-not-enough.html">
+        <div class="ch-num">11</div>
+        <div class="ch-body">
+          <h2>Agents — When One Retrieval Is Not Enough</h2>
+          <p>ReAct loop internals, QueryEngineTool, multi-index agents, FunctionTool for live API calls, and conversation memory across turns.</p>
+          <div class="ch-tags">
+            <span class="tag">ReActAgent</span><span class="tag">QueryEngineTool</span><span class="tag">FunctionTool</span><span class="tag">AgentMemory</span>
+          </div>
+        </div>
+        <div class="ch-arrow">→</div>
+      </a>
+
     </div>
 
     <!-- STACK -->

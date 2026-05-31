@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch10: Observability — Seeing Inside the Black Box — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);box-shadow:3px 3px 0 var(--text)}
+.ch-nav-next{text-align:right;margin-left:auto}
+.nav-dir{font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:4px}
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 10</div>
+    <h1>Chapter 10: Observability — Seeing Inside the Black Box</h1>
+  </header>
+  <div class="content">
+
+<hr>
+
+<h2>The problem this chapter solves</h2>
+
+<p>A RAG pipeline is a black box by default. You put a question in, an answer comes out. If the answer is wrong, you have no idea where in the pipeline it went wrong:</p>
+
+<ul><li>Did the retriever return the wrong chunks?</li><li>Were the right chunks there but scored too low and filtered out?</li><li>Did the LLM ignore the context and answer from training data?</li><li>Did the prompt template truncate the context?</li><li>Did a metadata extraction step add noise that confused the embedding?</li></ul>
+
+<p>Without observability, debugging means guessing. With observability, you have an event trace of every decision, latency, and token count across the full pipeline.</p>
+
+<hr>
+
+<h2>The observability architecture</h2>
+
+<p>LlamaIndex instruments everything through a single <code>CallbackManager</code> that lives on the <code>Settings</code> singleton. Every component — retrievers, synthesizers, LLMs, embed models — fires events through this manager. You attach handlers that receive those events.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 410" xmlns="http://www.w3.org/2000/svg"><title>Observability Architecture</title><rect x="230" y="19" width="220" height="42" rx="8" fill="#111"/><text x="340" y="40" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#fff">Settings.callback_manager</text><rect x="243.0" y="110.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="240.0" y="107.0" width="200" height="46" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="130.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#9b59b6">CallbackManager</text><line x1="340.0" y1="61.0" x2="340.0" y2="107.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,96.0 340.0,107.0 345.0,96.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><rect x="25.5" y="217.0" width="155" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="214.0" width="155" height="52" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="100.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">VectorRetriever</text><text x="100.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">fires RETRIEVE</text><line x1="156.7" y1="214.0" x2="289.8" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="281.9,162.1 289.8,153.0 277.7,153.0" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="190.5" y="217.0" width="155" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="187.5" y="214.0" width="155" height="52" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="265.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6">Synthesizer</text><text x="265.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6">fires SYNTHESIZE</text><line x1="282.7" y1="214.0" x2="324.3" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="322.3,164.9 324.3,153.0 314.0,159.3" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="360.5" y="217.0" width="145" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="357.5" y="214.0" width="145" height="52" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="430.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">LLM</text><text x="430.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">fires LLM events</text><line x1="408.7" y1="214.0" x2="358.8" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="369.7,158.3 358.8,153.0 361.9,164.7" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="518.0" y="217.0" width="120" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="515.0" y="214.0" width="120" height="52" rx="10" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="575.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">EmbedModel</text><text x="575.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">fires EMBEDDING</text><line x1="519.5" y1="214.0" x2="389.1" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="401.2,153.1 389.1,153.0 397.0,162.2" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="53.0" y="327.0" width="160" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="50.0" y="324.0" width="160" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="130.0" y="337.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">LlamaDebugHandler</text><text x="130.0" y="353.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">print trace</text><line x1="317.5" y1="153.0" x2="150.5" y2="324.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="154.6,312.6 150.5,324.0 161.8,319.6" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="263.0" y="327.0" width="160" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="260.0" y="324.0" width="160" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="337.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">TokenCounting</text><text x="340.0" y="353.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Handler</text><line x1="340.0" y1="153.0" x2="340.0" y2="324.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="335.0,313.0 340.0,324.0 345.0,313.0" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="478.0" y="327.0" width="150" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="475.0" y="324.0" width="150" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550.0" y="337.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Custom handler</text><text x="550.0" y="353.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">your logger</text><line x1="362.5" y1="153.0" x2="529.5" y2="324.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="518.2,319.6 529.5,324.0 525.4,312.6" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<hr>
+
+<h2>The event types</h2>
+
+<p>LlamaIndex fires events at the start and end of every major operation:</p>
+
+<table><thead><tr><th>Event</th><th>Fires when</th><th>Contains</th></tr></thead><tbody>
+<tr><td><code>RETRIEVE</code></td><td>Retriever called</td><td>query string, returned nodes, scores</td></tr>
+<tr><td><code>SYNTHESIZE</code></td><td>Synthesizer called</td><td>query, context string, response</td></tr>
+<tr><td><code>LLM</code></td><td>LLM API call made</td><td>full prompt, completion, token counts</td></tr>
+<tr><td><code>EMBEDDING</code></td><td>Embed model called</td><td>text batch, resulting vectors</td></tr>
+<tr><td><code>CHUNKING</code></td><td>NodeParser called</td><td>input text, output chunks</td></tr>
+<tr><td><code>NODE_PARSING</code></td><td>Transformation runs</td><td>input nodes, output nodes</td></tr>
+<tr><td><code>QUERY</code></td><td>Full query started/ended</td><td>end-to-end latency</td></tr>
+</tbody></table>
+
+<p>Each event has a start (<code>CBEventType.XXX</code>) and end (<code>EventType.XXX_END</code>) so you can measure latency of any component independently.</p>
+
+<hr>
+
+<h2>Tool 1: <code>LlamaDebugHandler</code> — local development</h2>
+
+<p>The simplest handler. Collects all events in memory and prints a trace at the end of each query. Zero configuration.</p>
+
+<pre><code class="language-python">from llama_index.core import Settings, VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
+
+# Wire up the debug handler
+debug_handler = LlamaDebugHandler(print_trace_on_end=True)
+Settings.callback_manager = CallbackManager([debug_handler])
+
+# Build index and query — all events are now captured
+documents = SimpleDirectoryReader(&quot;./docs&quot;).load_data()
+index     = VectorStoreIndex.from_documents(documents)
+engine    = index.as_query_engine()
+
+response = engine.query(&quot;How do I roll back a deployment?&quot;)</code></pre>
+
+<p>Output:</p>
+
+<pre><code class="language-">**********
+Trace: query
+    |_query -&gt;  2.14 seconds
+      |_retrieve -&gt;  0.31 seconds
+        |_embedding -&gt;  0.18 seconds
+      |_synthesize -&gt;  1.82 seconds
+        |_llm -&gt;  1.74 seconds
+**********</code></pre>
+
+<p>You can also query the events programmatically:</p>
+
+<pre><code class="language-python"># See all events
+events = debug_handler.get_events()
+for e in events:
+    print(f&quot;{e.event_type.value:20s}  {e.id_}&quot;)
+
+# Get the LLM call — inspect the full prompt
+llm_events = debug_handler.get_llm_inputs_outputs()
+for e in llm_events:
+    print(&quot;=== PROMPT ===&quot;)
+    print(e.inputs[&quot;messages&quot;])
+    print(&quot;=== RESPONSE ===&quot;)
+    print(e.outputs[&quot;response&quot;])
+    print(f&quot;Tokens: {e.outputs.get(&#x27;total_tokens&#x27;, &#x27;?&#x27;)}&quot;)</code></pre>
+
+<hr>
+
+<h2>Tool 2: Token counting — measure cost</h2>
+
+<p>The <code>TokenCountingHandler</code> tracks every token used across all LLM and embed calls.</p>
+
+<pre><code class="language-python">import tiktoken
+from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
+
+token_counter = TokenCountingHandler(
+    tokenizer=tiktoken.encoding_for_model(&quot;gpt-4o-mini&quot;).encode,
+    verbose=True,
+)
+Settings.callback_manager = CallbackManager([token_counter])
+
+# Run a query
+response = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+# Read the counts
+print(f&quot;LLM prompt tokens:     {token_counter.prompt_llm_token_count}&quot;)
+print(f&quot;LLM completion tokens: {token_counter.completion_llm_token_count}&quot;)
+print(f&quot;Embed tokens total:    {token_counter.total_embedding_token_count}&quot;)
+print(f&quot;Total LLM tokens:      {token_counter.total_llm_token_count}&quot;)</code></pre>
+
+<p>Use this to benchmark your prompt template and synthesis mode choices before running at production scale. A <code>REFINE</code> synthesis mode might use 5x more tokens than <code>COMPACT</code> for the same query.</p>
+
+<hr>
+
+<h2>Tool 3: Custom handler — log to your stack</h2>
+
+<p>For production, you want events in your existing logging infrastructure (Datadog, Grafana, CloudWatch). Write a handler that emits structured logs or metrics:</p>
+
+<pre><code class="language-python">import json, time
+import logging
+from llama_index.core.callbacks import BaseCallbackHandler, CBEventType
+from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(&quot;rag.trace&quot;)
+
+class StructuredLogHandler(BaseCallbackHandler):
+    def __init__(self):
+        super().__init__([], [])   # no filtered events
+
+    def on_event_start(self, event_type: CBEventType,
+                       payload: Optional[Dict] = None, **kwargs) -&gt; str:
+        self._start_times[kwargs.get(&#x27;event_id&#x27;,&#x27;&#x27;)] = time.time()
+        return &quot;&quot;
+
+    def on_event_end(self, event_type: CBEventType,
+                     payload: Optional[Dict] = None,
+                     event_id: str = &quot;&quot;, **kwargs) -&gt; None:
+        latency = time.time() - self._start_times.pop(event_id, time.time())
+        log = {
+            &quot;event&quot;:   event_type.value,
+            &quot;latency&quot;: round(latency, 3),
+        }
+        if event_type == CBEventType.RETRIEVE and payload:
+            nodes = payload.get(&quot;nodes&quot;, [])
+            log[&quot;num_nodes&quot;]   = len(nodes)
+            log[&quot;top_score&quot;]   = nodes[0].score if nodes else 0
+            log[&quot;bottom_score&quot;] = nodes[-1].score if nodes else 0
+        if event_type == CBEventType.LLM and payload:
+            log[&quot;prompt_tokens&quot;]     = payload.get(&quot;prompt_token_count&quot;, 0)
+            log[&quot;completion_tokens&quot;] = payload.get(&quot;completion_token_count&quot;, 0)
+        logger.info(json.dumps(log))
+
+    def start_trace(self, trace_id: Optional[str] = None) -&gt; None: pass
+    def end_trace(self, trace_id: Optional[str] = None,
+                  trace_map: Optional[Dict] = None) -&gt; None: pass
+
+Settings.callback_manager = CallbackManager([StructuredLogHandler()])</code></pre>
+
+<p>This emits JSON log lines that any log aggregator can ingest and dashboard.</p>
+
+<hr>
+
+<h2>The four metrics that matter</h2>
+
+<p>Once you have event data, these are the metrics that tell you whether your RAG system is healthy:</p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 240" xmlns="http://www.w3.org/2000/svg"><title>Four Key Metrics</title><rect x="20.5" y="58.0" width="175" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="17.5" y="55.0" width="175" height="90" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="105.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Retrieval Precision</text><text x="105.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Are chunks actually</text><text x="105.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">relevant?</text><rect x="210.5" y="58.0" width="175" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="207.5" y="55.0" width="175" height="90" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="295.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Answer Faithfulness</text><text x="295.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Answer grounded</text><text x="295.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">in retrieved text?</text><rect x="400.5" y="58.0" width="175" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="397.5" y="55.0" width="175" height="90" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="485.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Token Cost</text><text x="485.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Prompt+completion</text><text x="485.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">tokens x price</text><rect x="563.0" y="58.0" width="120" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="560.0" y="55.0" width="120" height="90" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="620.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Latency</text><text x="620.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Retrieval+synth</text><text x="620.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">P50/P95/P99</text></svg></div></p>
+
+<p><strong>Retrieval precision:</strong> Check <code>response.source_nodes</code>. Are the retrieved chunks actually about the query topic? If top scores are consistently below 0.7, your embed model or chunk size needs tuning.</p>
+
+<p><strong>Answer faithfulness:</strong> Does the answer use language from the source chunks? LLM hallucinations appear as claims in the answer not supported by any retrieved chunk. Tools like <code>DeepEval</code> and <code>Ragas</code> automate this check.</p>
+
+<p><strong>Token cost:</strong> <code>prompt_llm_token_count</code> × model price. A <code>COMPACT</code> synthesizer with <code>similarity_top_k=5</code> on <code>gpt-4o-mini</code> should cost well under $0.001 per query.</p>
+
+<p><strong>End-to-end latency:</strong> The debug trace shows <code>retrieve</code> and <code>synthesize</code> latencies separately. Retrieval above 100ms points to a slow vector store. Synthesis above 2s points to a large prompt or slow model.</p>
+
+<hr>
+
+<h2>POC: full trace on a single query</h2>
+
+<pre><code class="language-python">from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core.callbacks import (
+    CallbackManager, LlamaDebugHandler, TokenCountingHandler
+)
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.openai import OpenAI
+import tiktoken
+
+# Wire everything up
+debug   = LlamaDebugHandler(print_trace_on_end=False)
+counter = TokenCountingHandler(
+    tokenizer=tiktoken.encoding_for_model(&quot;gpt-4o-mini&quot;).encode
+)
+Settings.callback_manager = CallbackManager([debug, counter])
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+Settings.llm = OpenAI(model=&quot;gpt-4o-mini&quot;)
+
+# Build and query
+documents = SimpleDirectoryReader(&quot;./docs&quot;).load_data()
+index     = VectorStoreIndex.from_documents(documents)
+engine    = index.as_query_engine(similarity_top_k=5)
+response  = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+# Print the trace
+print(&quot;=== Answer ===&quot;)
+print(response.response)
+
+print(&quot;\n=== Retrieved Chunks ===&quot;)
+for n in response.source_nodes:
+    print(f&quot;  score={n.score:.4f}  {n.node.text[:100]}...&quot;)
+
+print(&quot;\n=== Latency ===&quot;)
+events = debug.get_events()
+for e in events:
+    if hasattr(e, &#x27;time&#x27;) and e.time:
+        print(f&quot;  {e.event_type.value:25s}  {e.time:.3f}s&quot;)
+
+print(&quot;\n=== Token Cost ===&quot;)
+print(f&quot;  Prompt:     {counter.prompt_llm_token_count} tokens&quot;)
+print(f&quot;  Completion: {counter.completion_llm_token_count} tokens&quot;)
+print(f&quot;  Embed:      {counter.total_embedding_token_count} tokens&quot;)</code></pre>
+
+<hr>
+
+<h2>Production observability checklist</h2>
+
+<p>Before launching to production, verify all of these are instrumented:</p>
+
+<pre><code class="language-">□ Retrieval: log num_nodes, top_score, bottom_score per query
+□ Latency: log retrieve_ms and synthesize_ms per query
+□ Tokens: log prompt + completion tokens per query
+□ Errors: log any retrieval or LLM exceptions with query context
+□ Feedback: log thumbs-up/down from engineers to build eval set
+□ Weekly audit: sample 50 queries, check source_nodes manually</code></pre>
+
+<p>The weekly manual audit catches silent failures that metrics miss — the cases where scores look fine but the retrieved chunks are technically about the right topic but the wrong version of a procedure.</p>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In the final chapter, Chapter 11, we add agents — the ability for LlamaIndex to answer multi-step questions that require multiple retrievals, tool calls, and reasoning steps. When a single query-and-synthesize is not enough, agents take over.</p>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-09-scaling-ingestion-to-10-million-documents.html"><div class="nav-dir">← Previous</div>Scaling Ingestion to 10 Million Documents</a><a class="ch-nav-btn ch-nav-next" href="chapter-11-agents-when-one-retrieval-is-not-enough.html"><div class="nav-dir">Next →</div>Agents — When One Retrieval Is Not Enough</a></nav>
+</main>
+</body>
+</html>

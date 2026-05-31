@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch06: How Search Actually Works — Cosine Similarity from Scratch — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);box-shadow:3px 3px 0 var(--text)}
+.ch-nav-next{text-align:right;margin-left:auto}
+.nav-dir{font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:4px}
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 06</div>
+    <h1>Chapter 6: How Search Actually Works — Cosine Similarity from Scratch</h1>
+  </header>
+  <div class="content">
+
+<hr>
+
+<h2>The problem this chapter solves</h2>
+
+<p>You have built the pipeline. Documents are chunked and embedded. The vector store is full. Now an engineer asks a question.</p>
+
+<p>What actually happens next? Most tutorials say "similarity search" and move on. That is not enough. If you do not understand the mechanics, you cannot debug retrieval failures, tune <code>similarity_top_k</code>, choose between vector stores, or explain to your team why the system sometimes returns wrong answers.</p>
+
+<p>This chapter traces every line of code from <code>engine.query("...")</code> to the moment two <code>TextNode</code> objects land back in your application.</p>
+
+<hr>
+
+<h2>Step 1: Wrapping the query in a QueryBundle</h2>
+
+<p>The first thing <code>RetrieverQueryEngine</code> does is wrap your raw string in a <code>QueryBundle</code>:</p>
+
+<pre><code class="language-python"># schema.py
+class QueryBundle(BaseComponent):
+    query_str:              str          # &quot;how do I roll back a bad deployment?&quot;
+    custom_embedding_strs:  List[str]    # optional — embed something different
+    embedding:              List[float]  # populated by the retriever</code></pre>
+
+<p>Why not just pass the string directly? Because embedding and querying are separate concerns. You might want to embed a rewritten version of the query for better retrieval, while keeping the original string for the LLM prompt. The <code>QueryBundle</code> holds both independently.</p>
+
+<hr>
+
+<h2>Step 2: Embedding the query</h2>
+
+<p>The retriever calls <code>embed_model.get_query_embedding(query_bundle.query_str)</code>. This is the same model used during ingestion — <code>get_query_embedding</code> not <code>get_text_embedding</code>, because some models use different internal instructions for queries vs documents.</p>
+
+<pre><code class="language-python">query_bundle.embedding = embed_model.get_query_embedding(
+    &quot;how do I roll back a bad deployment?&quot;
+)
+# → [0.034, -0.712, 0.441, 0.103, -0.234, ..., 0.671]  # 1536 floats</code></pre>
+
+<p>This vector represents the <strong>meaning</strong> of the question in the same geometric space as the stored chunk vectors. Searching now becomes: find the stored vectors that point in the same direction as this query vector.</p>
+
+<hr>
+
+<h2>Step 3: Building the VectorStoreQuery</h2>
+
+<p>The retriever assembles a query object:</p>
+
+<pre><code class="language-python"># From VectorIndexRetriever._retrieve()
+query = VectorStoreQuery(
+    query_embedding   = query_bundle.embedding,   # [0.034, -0.712, ...]
+    similarity_top_k  = 2,                        # DEFAULT — return top 2
+    query_str         = &quot;how do I roll back...&quot;,
+    mode              = VectorStoreQueryMode.DEFAULT,  # cosine similarity
+    filters           = None,                     # optional metadata pre-filter
+)</code></pre>
+
+<p><code>similarity_top_k=2</code> is the default and the most common production footgun. Two chunks is almost never enough for complex queries. Most production systems use 5–10.</p>
+
+<hr>
+
+<h2>Step 4: The cosine similarity search</h2>
+
+<p>This is the actual math. Here is the exact function from LlamaIndex's source — <code>get_top_k_embeddings()</code>:</p>
+
+<pre><code class="language-python">import numpy as np
+
+def get_top_k_embeddings(
+    query_embedding:   List[float],       # shape: (D,)    D = 1536
+    doc_embeddings:    List[List[float]], # shape: (N, D)  N = 650,000 chunks
+    doc_ids:           List[str],
+    similarity_top_k:  int = 2,
+) -&gt; Tuple[List[float], List[str]]:
+
+    qembed_np  = np.array(query_embedding)   # (D,)
+    dembed_np  = np.array(doc_embeddings)    # (N, D)
+
+    # Dot product: for each chunk, how much does it align with the query?
+    dproduct_arr = np.dot(dembed_np, qembed_np)   # (N,)
+
+    # Magnitudes: normalise out the vector lengths
+    norm_arr = np.linalg.norm(qembed_np) * np.linalg.norm(dembed_np, axis=1)  # (N,)
+
+    # Cosine similarity = dot product / (magnitude_q * magnitude_d)
+    cos_sim_arr = dproduct_arr / norm_arr    # (N,)  values in [-1, +1]
+
+    # Sort descending, take top k
+    tups = [(cos_sim_arr[i], doc_ids[i]) for i in range(len(doc_ids))]
+    sorted_tups = sorted(tups, key=lambda t: t[0], reverse=True)
+    sorted_tups = sorted_tups[:similarity_top_k]
+
+    return [s for s, _ in sorted_tups], [n for _, n in sorted_tups]</code></pre>
+
+<p>Let us trace this with real numbers.</p>
+
+<hr>
+
+<h2>Walking through the math</h2>
+
+<p>Say you have 3 chunks (simplified to 4 dimensions — same math as 1536):</p>
+
+<pre><code class="language-">chunk A: &quot;Rollback procedure: run kubectl rollout undo deployment/app&quot;
+  → embedding = [0.8, 0.3, 0.1, 0.4]
+
+chunk B: &quot;Kubernetes pods restart automatically on OOMKill events&quot;
+  → embedding = [0.1, 0.9, 0.2, 0.3]
+
+chunk C: &quot;To revert a failed deployment, use the rollback command&quot;
+  → embedding = [0.7, 0.2, 0.1, 0.5]
+
+query: &quot;how do I roll back a bad deployment?&quot;
+  → query_vector = [0.75, 0.25, 0.15, 0.45]</code></pre>
+
+<p><strong>Step 4a — dot products:</strong></p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 280" xmlns="http://www.w3.org/2000/svg"><title>Dot Product Scores</title><rect x="223.0" y="28.0" width="240" height="50" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="220.0" y="25.0" width="240" height="50" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="41.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Query vector</text><text x="340.0" y="58.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">[0.75, 0.25, 0.15, 0.45]</text><rect x="25.5" y="153.0" width="175" height="60" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="150.0" width="175" height="60" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="163.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Chunk A</text><text x="110.0" y="180.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">[0.8,0.3,0.1,0.4]</text><text x="110.0" y="197.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">dot = 0.870</text><rect x="255.5" y="153.0" width="175" height="60" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="252.5" y="150.0" width="175" height="60" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="163.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#c0392b">Chunk B</text><text x="340.0" y="180.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#c0392b">[0.1,0.9,0.2,0.3]</text><text x="340.0" y="197.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#c0392b">dot = 0.465</text><rect x="485.5" y="153.0" width="175" height="60" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="150.0" width="175" height="60" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="163.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Chunk C</text><text x="570.0" y="180.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">[0.7,0.2,0.1,0.5]</text><text x="570.0" y="197.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">dot = 0.815</text><line x1="295.8" y1="75.0" x2="163.1" y2="150.0" stroke="#27ae60" stroke-width="2"  stroke-linecap="round"/><polygon points="170.2,140.2 163.1,150.0 175.1,148.9" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="75.0" x2="340.0" y2="150.0" stroke="#c0392b" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,139.0 340.0,150.0 345.0,139.0" fill="#c0392b" stroke="#c0392b" stroke-width="1" stroke-linejoin="round"/><line x1="384.2" y1="75.0" x2="516.9" y2="150.0" stroke="#27ae60" stroke-width="2"  stroke-linecap="round"/><polygon points="504.9,148.9 516.9,150.0 509.8,140.2" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<pre><code class="language-">chunk A · query = (0.8×0.75) + (0.3×0.25) + (0.1×0.15) + (0.4×0.45) = 0.870
+chunk B · query = (0.1×0.75) + (0.9×0.25) + (0.2×0.15) + (0.3×0.45) = 0.465
+chunk C · query = (0.7×0.75) + (0.2×0.25) + (0.1×0.15) + (0.5×0.45) = 0.815</code></pre>
+
+<p><strong>Step 4b — magnitudes:</strong></p>
+
+<pre><code class="language-">|query|   = √(0.75²+0.25²+0.15²+0.45²) = √0.85 = 0.922
+|chunk A| = √(0.8²+0.3²+0.1²+0.4²)     = √0.90 = 0.949
+|chunk B| = √(0.1²+0.9²+0.2²+0.3²)     = √0.95 = 0.975
+|chunk C| = √(0.7²+0.2²+0.1²+0.5²)     = √0.79 = 0.889</code></pre>
+
+<p><strong>Step 4c — cosine similarity:</strong></p>
+
+<pre><code class="language-">cos_sim(A) = 0.870 / (0.922 × 0.949) = 0.994  ✓ HIGH
+cos_sim(B) = 0.465 / (0.922 × 0.975) = 0.517  ✗ LOW
+cos_sim(C) = 0.815 / (0.922 × 0.889) = 0.994  ✓ HIGH</code></pre>
+
+<p><strong>Step 4d — sort and slice:</strong></p>
+
+<pre><code class="language-python">sorted_tups = [(0.994, &quot;chunk_A&quot;), (0.994, &quot;chunk_C&quot;), (0.517, &quot;chunk_B&quot;)]
+top_2       = [(0.994, &quot;chunk_A&quot;), (0.994, &quot;chunk_C&quot;)]   # [:2]</code></pre>
+
+<p>Chunks A and C are about rollback procedures. Chunk B is about pod restarts — unrelated. The math correctly separates them.</p>
+
+<hr>
+
+<h2>Step 5: Wrapping results in NodeWithScore</h2>
+
+<p>The vector store returns a <code>VectorStoreQueryResult</code>. The retriever wraps each node with its score:</p>
+
+<pre><code class="language-python"># What leaves the retriever
+nodes_with_scores = [
+    NodeWithScore(node=TextNode(&quot;Rollback procedure: run kubectl...&quot;), score=0.994),
+    NodeWithScore(node=TextNode(&quot;To revert a failed deployment...&quot;),   score=0.994),
+]</code></pre>
+
+<p>The score travels with the node through the entire downstream pipeline — postprocessors can use it to filter, rerankers can replace it, and <code>response.source_nodes</code> exposes it to your application for citation confidence scores.</p>
+
+<hr>
+
+<h2>Step 6: The complete flow</h2>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 520" xmlns="http://www.w3.org/2000/svg"><title>Full Query Flow</title><rect x="210" y="9" width="260" height="42" rx="8" fill="#111"/><text x="340" y="30" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="700" fill="#fff">engine.query('how do I roll back?')</text><rect x="213.0" y="82.0" width="260" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="210.0" y="79.0" width="260" height="42" rx="10" fill="#f9f9f9" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#555">QueryBundle  query_str + embedding=None</text><rect x="213.0" y="147.0" width="260" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="210.0" y="144.0" width="260" height="42" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="156.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">embed_model.get_query_embedding()</text><text x="340.0" y="173.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">returns float vector</text><rect x="213.0" y="212.0" width="260" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="210.0" y="209.0" width="260" height="42" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="221.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">VectorStoreQuery</text><text x="340.0" y="238.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">query_embedding  top_k=2</text><rect x="213.0" y="277.0" width="260" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="210.0" y="274.0" width="260" height="42" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="286.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">get_top_k_embeddings()</text><text x="340.0" y="303.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">dot product, normalize, sort, slice</text><rect x="213.0" y="342.0" width="260" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="210.0" y="339.0" width="260" height="42" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="351.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">List[NodeWithScore]</text><text x="340.0" y="368.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">node + score pairs</text><rect x="213.0" y="407.0" width="260" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="210.0" y="404.0" width="260" height="52" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="421.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Response</text><text x="340.0" y="438.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">.response=answer  .source_nodes=[A,C]</text><line x1="340.0" y1="51.0" x2="340.0" y2="79.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,68.0 340.0,79.0 345.0,68.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="121.0" x2="340.0" y2="144.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,133.0 340.0,144.0 345.0,133.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="186.0" x2="340.0" y2="209.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,198.0 340.0,209.0 345.0,198.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="251.0" x2="340.0" y2="274.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,263.0 340.0,274.0 345.0,263.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="316.0" x2="340.0" y2="339.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,328.0 340.0,339.0 345.0,328.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="381.0" x2="340.0" y2="404.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,393.0 340.0,404.0 345.0,393.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<hr>
+
+<h2>The O(N) problem and ANN</h2>
+
+<p><code>get_top_k_embeddings()</code> iterates over <strong>every stored vector</strong>. For N nodes:</p>
+
+<table><thead><tr><th>N nodes</th><th>Memory (1536-dim, float32)</th><th>Query time</th></tr></thead><tbody>
+<tr><td>1,000</td><td>6 MB</td><td>< 1ms</td></tr>
+<tr><td>100,000</td><td>600 MB</td><td>~10ms</td></tr>
+<tr><td>1,000,000</td><td>6 GB</td><td>~100ms</td></tr>
+<tr><td>10,000,000</td><td>60 GB</td><td>seconds — unusable</td></tr>
+</tbody></table>
+
+<p>At scale you swap <code>SimpleVectorStore</code> for a vector database that uses <strong>Approximate Nearest Neighbor (ANN)</strong> algorithms. The most common: HNSW (used by Chroma, Weaviate, Qdrant) and IVF (used by Pinecone, Faiss). These trade a tiny recall loss (finding 99.x% of true top-k instead of 100%) for sub-millisecond queries over billions of vectors.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 220" xmlns="http://www.w3.org/2000/svg"><title>O(N) vs ANN</title><rect x="15" y="15" width="300" height="160" rx="12" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="7 4"/><text x="29" y="33" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#27ae60">Day One - SimpleVectorStore</text><rect x="43.0" y="58.0" width="250" height="80" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="40.0" y="55.0" width="250" height="80" rx="10" fill="#fff" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165.0" y="78.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Brute-force numpy loop</text><text x="165.0" y="95.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">O(N) time  Exact top-k</text><text x="165.0" y="112.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Max ~100k nodes</text><rect x="365" y="15" width="300" height="160" rx="12" fill="#fdebd0" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="7 4"/><text x="379" y="33" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#e67e22">Production - External Vector DB</text><rect x="393.0" y="58.0" width="250" height="80" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="390.0" y="55.0" width="250" height="80" rx="10" fill="#fff" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515.0" y="78.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">ANN index HNSW / IVF</text><text x="515.0" y="95.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">O(log N) time  99.9% recall</text><text x="515.0" y="112.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Billions of nodes</text><line x1="290.0" y1="95.0" x2="390.0" y2="95.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="379.0,100.0 390.0,95.0 379.0,90.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><rect x="271.0" y="85.0" width="138" height="20" rx="4" fill="white" stroke="#555" stroke-width="1"/><text x="340.0" y="100.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#555">Swap vector_store=</text></svg></div></p>
+
+<p>The swap is one line — <code>vector_store=ChromaVectorStore(...)</code> in your <code>IngestionPipeline</code>. The retriever code does not change. The <code>VectorStoreQuery</code> interface is identical.</p>
+
+<hr>
+
+<h2>POC: run the search yourself and inspect scores</h2>
+
+<pre><code class="language-python">import numpy as np
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+
+documents = SimpleDirectoryReader(&quot;./docs&quot;).load_data()
+index     = VectorStoreIndex.from_documents(documents)
+
+# Use retriever directly — bypass the LLM synthesis step
+retriever = index.as_retriever(similarity_top_k=5)
+nodes = retriever.retrieve(&quot;how do I roll back a bad deployment?&quot;)
+
+print(f&quot;Retrieved {len(nodes)} chunks:\n&quot;)
+for i, node_with_score in enumerate(nodes):
+    print(f&quot;  [{i+1}] score={node_with_score.score:.4f}&quot;)
+    print(f&quot;       file={node_with_score.node.metadata.get(&#x27;file_name&#x27;,&#x27;?&#x27;)}&quot;)
+    print(f&quot;       text={node_with_score.node.text[:120]}...&quot;)
+    print()</code></pre>
+
+<p>Run this before ever querying via the full engine. Seeing the raw scores tells you immediately whether retrieval is working — if top scores are below 0.5, your chunks are not matching the query semantically and you need to re-examine your chunk size or embed model.</p>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In Chapter 7, we follow the retrieved nodes through the rest of the query engine — the postprocessor stage (filtering and reranking) and the response synthesizer (building the LLM prompt and calling the model). The retriever gets the right chunks; the synthesizer turns them into an answer.</p>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-05-the-ingestion-pipeline-the-assembly-line.html"><div class="nav-dir">← Previous</div>The Ingestion Pipeline — The Assembly Line</a><a class="ch-nav-btn ch-nav-next" href="chapter-07-the-query-engine-from-question-to-answer.html"><div class="nav-dir">Next →</div>The Query Engine — From Question to Answer</a></nav>
+</main>
+</body>
+</html>

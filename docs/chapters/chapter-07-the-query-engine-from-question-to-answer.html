@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ch07: The Query Engine — From Question to Answer — LlamaIndex RAG Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2ed;--surface:#fff;--border:#e2e2da;
+  --text:#111;--muted:#666660;--green:#c8f135;--green-dk:#a8d010;
+  --dot:#d8d8d0;--code-bg:#1e1e2e;--code-text:#cdd6f4;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  line-height:1.75;font-size:16px;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;z-index:0;opacity:.45}
+nav{position:sticky;top:0;z-index:100;background:rgba(242,242,237,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 48px;height:60px;display:flex;align-items:center;
+  justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-back{font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border:1.5px solid var(--border);padding:6px 14px;border-radius:8px;
+  background:var(--surface);transition:border-color .15s,color .15s}
+.nav-back:hover{border-color:var(--text);color:var(--text)}
+.page-wrap{position:relative;z-index:1;max-width:780px;margin:0 auto;
+  padding:60px 48px 100px}
+.ch-header{margin-bottom:52px}
+.ch-num-label{font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.ch-num-label::before{content:"";width:20px;height:2px;
+  background:var(--green);display:inline-block;border-radius:2px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:20px}
+.content h2{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;
+  margin:52px 0 14px;letter-spacing:-.02em;
+  padding-bottom:10px;border-bottom:2px solid var(--border)}
+.content h3{font-size:1.05rem;font-weight:700;margin:32px 0 10px}
+.content h4{font-size:.95rem;font-weight:700;margin:24px 0 8px;color:var(--muted)}
+.content p{margin-bottom:18px;color:#2a2a2a}
+.content ul,.content ol{margin:0 0 18px 24px}
+.content li{margin-bottom:6px;color:#2a2a2a}
+.content strong{color:var(--text);font-weight:700}
+.content hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+.content blockquote{background:var(--surface);
+  border:1.5px solid var(--border);border-left:4px solid var(--green);
+  border-radius:0 10px 10px 0;padding:16px 20px;margin:24px 0;
+  font-size:.95rem;color:var(--muted)}
+.content table{width:100%;border-collapse:collapse;margin:24px 0;
+  font-size:13.5px;background:var(--surface);
+  border-radius:10px;overflow:hidden;border:1.5px solid var(--border)}
+.content th{background:var(--text);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em}
+.content td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.content tr:last-child td{border-bottom:none}
+.content tr:nth-child(even) td{background:#fafaf6}
+.content code{background:#ebebeb;border-radius:4px;
+  padding:2px 6px;font-size:.85rem;font-family:'JetBrains Mono','Fira Code',monospace;
+  color:#c0392b}
+.content pre{background:var(--code-bg);border-radius:12px;
+  padding:24px;margin:24px 0;overflow-x:auto;
+  border:1.5px solid #313244;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.content pre code{background:none;color:var(--code-text);
+  font-size:.85rem;padding:0;border-radius:0}
+.diagram-wrap{margin:32px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  padding:32px 24px;overflow-x:auto;
+  box-shadow:3px 3px 0 var(--border)}
+.diagram-wrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.chapter-nav{display:flex;justify-content:space-between;
+  margin-top:80px;padding-top:32px;border-top:1.5px solid var(--border);gap:16px}
+.ch-nav-btn{text-decoration:none;color:var(--text);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:14px 20px;background:var(--surface);
+  font-size:13px;font-weight:600;transition:all .15s;max-width:48%}
+.ch-nav-btn:hover{border-color:var(--text);box-shadow:3px 3px 0 var(--text)}
+.ch-nav-next{text-align:right;margin-left:auto}
+.nav-dir{font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:4px}
+@media(max-width:680px){
+  nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
+  .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">🦙</div>RAG Series
+  </a>
+  <a href="../index.html" class="nav-back">← All Chapters</a>
+</nav>
+<main class="page-wrap">
+  <header class="ch-header">
+    <div class="ch-num-label">Chapter 07</div>
+    <h1>Chapter 7: The Query Engine — From Question to Answer</h1>
+  </header>
+  <div class="content">
+
+<hr>
+
+<h2>The problem this chapter solves</h2>
+
+<p>Chapter 6 ended with <code>List[NodeWithScore]</code> — the right chunks, with scores. But a list of text fragments is not an answer. The engineer asked a question. They need a sentence, a paragraph, maybe a step-by-step procedure.</p>
+
+<p>Between the retrieved chunks and the final answer, three more things happen:</p>
+
+<ol><li><strong>Postprocessing</strong> — filter out low-quality chunks, rerank by relevance</li><li><strong>Synthesis</strong> — pack the chunks into a prompt, call the LLM, get text back</li><li><strong>Response wrapping</strong> — return the answer with source attribution</li></ol>
+
+<p>This is the query engine's job. It orchestrates all three stages.</p>
+
+<hr>
+
+<h2>The three-stage architecture</h2>
+
+<p><code>RetrieverQueryEngine</code> is three lines of code that call three separate systems:</p>
+
+<pre><code class="language-python"># query_engine/retriever_query_engine.py
+def _query(self, query_bundle: QueryBundle) -&gt; RESPONSE_TYPE:
+
+    # Stage 1: find relevant chunks
+    nodes = self.retriever.retrieve(query_bundle)
+
+    # Stage 2: filter, rerank, trim
+    for postprocessor in self._node_postprocessors:
+        nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
+
+    # Stage 3: build prompt + call LLM
+    return self.response_synthesizer.synthesize(query_bundle, nodes=nodes)</code></pre>
+
+<p>Each stage is independently swappable. The query engine itself never changes — it just calls <code>.retrieve()</code>, loops postprocessors, calls <code>.synthesize()</code>. This is the Strategy pattern applied three times in a row.</p>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 170" xmlns="http://www.w3.org/2000/svg"><title>Three Stage Query Engine</title><rect x="13.0" y="43.0" width="100" height="50" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="10.0" y="40.0" width="100" height="50" rx="10" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="60.0" y="56.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#888">User</text><text x="60.0" y="74.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#888">Query</text><rect x="153.0" y="43.0" width="140" height="50" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="150.0" y="40.0" width="140" height="50" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="220.0" y="56.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#2980b9">Retriever</text><text x="220.0" y="74.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#2980b9">Top-k chunks</text><rect x="323.0" y="43.0" width="140" height="50" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="320.0" y="40.0" width="140" height="50" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="390.0" y="56.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Postprocessors</text><text x="390.0" y="74.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Filter + Rerank</text><rect x="493.0" y="43.0" width="140" height="50" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="490.0" y="40.0" width="140" height="50" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="560.0" y="56.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#9b59b6">Synthesizer</text><text x="560.0" y="74.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#9b59b6">Prompt + LLM</text><line x1="110.0" y1="65.0" x2="150.0" y2="65.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="139.0,70.0 150.0,65.0 139.0,60.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="290.0" y1="65.0" x2="320.0" y2="65.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="309.0,70.0 320.0,65.0 309.0,60.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="460.0" y1="65.0" x2="490.0" y2="65.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="479.0,70.0 490.0,65.0 479.0,60.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<hr>
+
+<h2>Stage 2: Node Postprocessors</h2>
+
+<p>Postprocessors sit between retrieval and synthesis. They can filter nodes out, reorder them, trim their text, or replace their scores. Each one implements:</p>
+
+<pre><code class="language-python">class BaseNodePostprocessor:
+    def postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -&gt; List[NodeWithScore]:
+        ...</code></pre>
+
+<h3><code>SimilarityPostprocessor</code> — the quality gate</h3>
+
+<p>Drops any node below a similarity cutoff. This prevents low-confidence chunks from polluting the LLM prompt with noise.</p>
+
+<pre><code class="language-python">from llama_index.core.postprocessor import SimilarityPostprocessor
+
+# Drop anything below 0.75 cosine similarity
+engine = index.as_query_engine(
+    similarity_top_k=10,
+    node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.75)]
+)</code></pre>
+
+<p>If your top-10 retrieval returns scores like <code>[0.91, 0.88, 0.84, 0.71, 0.68, ...]</code>, the cutoff trims the list to the 3 high-confidence chunks. The LLM works with less but better context.</p>
+
+<h3><code>LLMRerank</code> — the quality upgrade</h3>
+
+<p>Sends the retrieved chunks to the LLM and asks it to re-rank them by relevance to the query. More expensive (one extra LLM call) but significantly better answers for ambiguous or complex queries.</p>
+
+<pre><code class="language-python">from llama_index.core.postprocessor import LLMRerank
+
+engine = index.as_query_engine(
+    similarity_top_k=10,   # retrieve 10 broadly
+    node_postprocessors=[
+        LLMRerank(
+            choice_batch_size=5,
+            top_n=3,           # return best 3 after reranking
+        )
+    ]
+)</code></pre>
+
+<p>The idea: vector similarity is good at broad relevance. The LLM is better at fine-grained relevance. Retrieve broadly with vectors, rerank precisely with the LLM.</p>
+
+<h3><code>SentenceEmbeddingOptimizer</code> — trim within chunks</h3>
+
+<p>Within each retrieved chunk, drops sentences whose embeddings are dissimilar to the query. Reduces the token count sent to the LLM without losing the most relevant sentences.</p>
+
+<pre><code class="language-python">from llama_index.core.postprocessor import SentenceEmbeddingOptimizer
+
+engine = index.as_query_engine(
+    node_postprocessors=[
+        SentenceEmbeddingOptimizer(percentile_cutoff=0.5)  # keep top 50% of sentences
+    ]
+)</code></pre>
+
+<hr>
+
+<h2>Stage 3: ResponseSynthesizer — building the LLM prompt</h2>
+
+<p>The synthesizer's job is: given N text chunks and a question, build the best possible LLM prompt and return the response.</p>
+
+<h3>How <code>get_content(MetadataMode.LLM)</code> works</h3>
+
+<p>Before building the prompt, the synthesizer calls <code>node.get_content(MetadataMode.LLM)</code> on each node. This returns the chunk text plus any metadata not in <code>excluded_llm_metadata_keys</code>:</p>
+
+<pre><code class="language-">file_name: deployment-guide.txt
+creation_date: 2024-06-10
+
+Rollback procedure: run kubectl rollout undo deployment/app
+to revert to the previous stable release...</code></pre>
+
+<p>The metadata prefix gives the LLM citation context without you having to do anything extra.</p>
+
+<h3>The default prompt template</h3>
+
+<pre><code class="language-python">text_qa_template = (
+    &quot;Context information is below.\n&quot;
+    &quot;---------------------\n&quot;
+    &quot;{context_str}\n&quot;
+    &quot;---------------------\n&quot;
+    &quot;Given the context information and not prior knowledge, &quot;
+    &quot;answer the query.\n&quot;
+    &quot;Query: {query_str}\n&quot;
+    &quot;Answer: &quot;
+)</code></pre>
+
+<p><code>{context_str}</code> is the concatenated text of all retrieved nodes. <code>{query_str}</code> is the original question.</p>
+
+<h3>The synthesis modes</h3>
+
+<p><div class="diagram-wrap"><svg viewBox="-20 -20 720 280" xmlns="http://www.w3.org/2000/svg"><title>Synthesis Modes</title><rect x="243.0" y="25.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="240.0" y="22.0" width="200" height="46" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="45.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="14" font-weight="700" fill="#9b59b6">ResponseSynthesizer</text><rect x="23.0" y="143.0" width="130" height="70" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="20.0" y="140.0" width="130" height="70" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="85.0" y="159.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">COMPACT</text><text x="85.0" y="175.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">(default)</text><text x="85.0" y="191.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">1-2 calls</text><line x1="294.9" y1="68.0" x2="150.0" y2="141.9" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polygon points="157.5,132.4 150.0,141.9 162.1,141.3" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="163.0" y="143.0" width="130" height="70" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="160.0" y="140.0" width="130" height="70" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="225.0" y="159.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">REFINE</text><text x="225.0" y="175.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">1 call per node</text><text x="225.0" y="191.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">max accuracy</text><line x1="319.7" y1="68.0" x2="256.0" y2="140.0" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polygon points="259.5,128.4 256.0,140.0 267.0,135.1" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="298.0" y="143.0" width="130" height="70" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="295.0" y="140.0" width="130" height="70" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="360.0" y="167.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6">TREE_SUMMARIZE</text><text x="360.0" y="183.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6">log(N) calls</text><line x1="343.5" y1="68.0" x2="354.6" y2="140.0" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polygon points="348.0,129.9 354.6,140.0 357.9,128.4" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="433.0" y="143.0" width="130" height="70" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="430.0" y="140.0" width="130" height="70" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="495.0" y="159.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">ACCUMULATE</text><text x="495.0" y="175.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">1 call per node</text><text x="495.0" y="191.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">list queries</text><line x1="367.4" y1="68.0" x2="453.3" y2="140.0" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polygon points="441.6,136.8 453.3,140.0 448.1,129.1" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/><rect x="558.0" y="143.0" width="110" height="70" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="555.0" y="140.0" width="110" height="70" rx="10" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="610.0" y="159.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">SIMPLE</text><text x="610.0" y="175.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">1 call</text><text x="610.0" y="191.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">fastest</text><line x1="387.8" y1="68.0" x2="555.0" y2="148.5" stroke="#888" stroke-width="1"  stroke-linecap="round"/><polygon points="542.9,148.3 555.0,148.5 547.3,139.2" fill="#888" stroke="#888" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
+
+<p><strong>COMPACT (default):</strong> Packs as many node texts as possible into one context window. If all chunks fit → 1 LLM call. If not → falls back to REFINE for the overflow. Best for most queries.</p>
+
+<p><strong>REFINE:</strong> Starts with the first chunk, generates an answer, then refines that answer with each subsequent chunk. Produces the highest quality answer but costs 1 LLM call per node. Use for complex reasoning.</p>
+
+<p><strong>TREE_SUMMARIZE:</strong> Builds a binary tree of summaries bottom-up. Good for summarisation tasks over many documents. <code>log(N)</code> LLM calls.</p>
+
+<p><strong>ACCUMULATE:</strong> Answers the question independently for each chunk, then concatenates. Best for "list all mentions of X across these documents" queries.</p>
+
+<table><thead><tr><th>Mode</th><th>LLM calls</th><th>Best for</th></tr></thead><tbody>
+<tr><td><code>COMPACT</code></td><td>1–2</td><td>Default — most Q&A queries</td></tr>
+<tr><td><code>REFINE</code></td><td>N (one per node)</td><td>Complex reasoning, max accuracy</td></tr>
+<tr><td><code>TREE_SUMMARIZE</code></td><td>log(N)</td><td>Summarisation over many docs</td></tr>
+<tr><td><code>ACCUMULATE</code></td><td>N</td><td>Listing / aggregation queries</td></tr>
+<tr><td><code>SIMPLE_SUMMARIZE</code></td><td>1</td><td>Speed — accepts truncation</td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>The Response object</h2>
+
+<p>The final object returned by <code>engine.query()</code> is not just a string:</p>
+
+<pre><code class="language-python">response = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+response.response      # &quot;To roll back, run: kubectl rollout undo deployment/app...&quot;
+response.source_nodes  # [NodeWithScore(node=..., score=0.994), ...]
+response.metadata      # {&quot;node_id&quot;: {&quot;file_name&quot;: &quot;...&quot;, ...}}</code></pre>
+
+<p><code>source_nodes</code> is the citation layer. Every answer carries the exact chunks that produced it. You can build a UI that shows the answer with "Source: deployment-guide.txt, paragraph 3" without any extra work.</p>
+
+<hr>
+
+<h2>POC: build a query engine with all three stages</h2>
+
+<pre><code class="language-python">from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.response_synthesizers import get_response_synthesizer, ResponseMode
+from llama_index.core.postprocessor import SimilarityPostprocessor
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.openai import OpenAI
+
+Settings.embed_model = HuggingFaceEmbedding(model_name=&quot;BAAI/bge-small-en-v1.5&quot;)
+Settings.llm = OpenAI(model=&quot;gpt-4o-mini&quot;)
+
+documents = SimpleDirectoryReader(&quot;./docs&quot;).load_data()
+index     = VectorStoreIndex.from_documents(documents)
+
+# Build each component explicitly
+retriever     = VectorIndexRetriever(index=index, similarity_top_k=8)
+postprocessor = SimilarityPostprocessor(similarity_cutoff=0.75)
+synthesizer   = get_response_synthesizer(response_mode=ResponseMode.COMPACT)
+
+engine = RetrieverQueryEngine(
+    retriever=retriever,
+    node_postprocessors=[postprocessor],
+    response_synthesizer=synthesizer,
+)
+
+response = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+print(f&quot;Answer:\n{response.response}\n&quot;)
+print(f&quot;Sources ({len(response.source_nodes)} chunks):&quot;)
+for node in response.source_nodes:
+    print(f&quot;  score={node.score:.3f}  file={node.node.metadata[&#x27;file_name&#x27;]}&quot;)
+    print(f&quot;  text={node.node.text[:100]}...&quot;)</code></pre>
+
+<h3>Inspect what gets sent to the LLM</h3>
+
+<p>Add this to see the exact prompt before the API call:</p>
+
+<pre><code class="language-python">from llama_index.core import Settings
+from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
+
+debug_handler = LlamaDebugHandler(print_trace_on_end=True)
+Settings.callback_manager = CallbackManager([debug_handler])
+
+# Re-run — prints full event trace including the prompt
+response = engine.query(&quot;How do I roll back a deployment?&quot;)
+
+# Get the prompt from the debug handler
+events = debug_handler.get_events()
+for e in events:
+    if hasattr(e, &#x27;payload&#x27;) and &#x27;messages&#x27; in str(e.payload):
+        print(e.payload)</code></pre>
+
+<h3>Swap synthesis mode for summarisation queries</h3>
+
+<pre><code class="language-python"># For &quot;summarise everything about our deployment process&quot;
+summarise_engine = index.as_query_engine(
+    response_mode=&quot;tree_summarize&quot;,
+    similarity_top_k=15,
+)
+summary = summarise_engine.query(&quot;Summarise our entire deployment process&quot;)
+
+# For &quot;list all commands mentioned in the deployment guide&quot;
+accumulate_engine = index.as_query_engine(
+    response_mode=&quot;accumulate&quot;,
+    similarity_top_k=10,
+)
+listing = accumulate_engine.query(&quot;List every CLI command in the deployment guide&quot;)</code></pre>
+
+<hr>
+
+<h2>Scaling up: production query engine</h2>
+
+<p>At production scale, two things change in the query engine:</p>
+
+<p><strong>Swap LLMRerank in for high-stakes queries.</strong> The extra LLM call costs 200ms but improves answer quality significantly for ambiguous questions. Gate it behind query complexity detection:</p>
+
+<pre><code class="language-python">from llama_index.core.postprocessor import LLMRerank, SimilarityPostprocessor
+
+# Simple queries — fast path, just cutoff
+fast_engine = index.as_query_engine(
+    similarity_top_k=5,
+    node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.75)],
+    response_mode=&quot;compact&quot;,
+)
+
+# Complex queries — quality path, LLM rerank
+quality_engine = index.as_query_engine(
+    similarity_top_k=15,
+    node_postprocessors=[LLMRerank(top_n=5)],
+    response_mode=&quot;refine&quot;,
+)</code></pre>
+
+<p><strong>Use async for concurrent queries.</strong> At 500 engineers querying simultaneously:</p>
+
+<pre><code class="language-python"># Async query — does not block while waiting for the LLM response
+response = await engine.aquery(&quot;How do I roll back a deployment?&quot;)
+
+# Batch queries
+import asyncio
+queries = [&quot;How to deploy?&quot;, &quot;How to rollback?&quot;, &quot;How to monitor?&quot;]
+responses = await asyncio.gather(*[engine.aquery(q) for q in queries])</code></pre>
+
+<hr>
+
+<h2>Day One vs Production</h2>
+
+<table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
+<tr><td><code>similarity_top_k</code></td><td>2 (default)</td><td>5–15 based on query type</td></tr>
+<tr><td>Postprocessors</td><td>None</td><td><code>SimilarityPostprocessor</code> at minimum</td></tr>
+<tr><td>Reranking</td><td>None</td><td><code>LLMRerank</code> for complex queries</td></tr>
+<tr><td>Synthesis mode</td><td>COMPACT</td><td>COMPACT default, REFINE for complex</td></tr>
+<tr><td>Streaming</td><td>No</td><td><code>engine.query()</code> → <code>engine.stream_query()</code></td></tr>
+<tr><td>Async</td><td>Sync only</td><td><code>engine.aquery()</code> for concurrency</td></tr>
+<tr><td>Prompt template</td><td>Default</td><td>Custom template with company context</td></tr>
+<tr><td>Observability</td><td>None</td><td><code>CallbackManager</code> + tracing</td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>What's next</h2>
+
+<p>In Chapter 8 we step back and look at the retriever layer in depth. The default <code>VectorIndexRetriever</code> only handles semantic queries. When an engineer searches for "kubectl rollout undo v1.2.4" — an exact string — vector similarity fails. We cover <code>BM25Retriever</code>, <code>RouterRetriever</code>, <code>QueryFusionRetriever</code>, and the graph-walking retrievers that follow <code>PREV</code>/<code>NEXT</code>/<code>PARENT</code> relationships.</p>
+
+  </div>
+  <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-06-how-search-actually-works.html"><div class="nav-dir">← Previous</div>How Search Actually Works — Cosine Similarity from Scratch</a><a class="ch-nav-btn ch-nav-next" href="chapter-08-choosing-the-right-retriever.html"><div class="nav-dir">Next →</div>Choosing the Right Retriever</a></nav>
+</main>
+</body>
+</html>
