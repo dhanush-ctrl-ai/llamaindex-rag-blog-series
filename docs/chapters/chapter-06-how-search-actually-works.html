@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 6: How Search Actually Works — Cosine Similarity from Scratch</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q1" style="color:#6d28d9;background:#ede9fe;border-color:#6d28d980" title="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">📋 Q1 · System design</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q4" style="color:#b45309;background:#fef3c7;border-color:#b4530980" title="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">📋 Q4 · Debugging</a>
+</div>
 
 <hr>
 
@@ -119,7 +211,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <h2>Step 1: Wrapping the query in a QueryBundle</h2>
 
-<p>The first thing <code>RetrieverQueryEngine</code> does is wrap your raw string in a <code>QueryBundle</code>:</p>
+<p>The first thing <code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">RetrieverQueryEngine</mark></code> does is wrap your raw string in a <code>QueryBundle</code>:</p>
 
 <pre><code class="language-python"># schema.py
 class QueryBundle(BaseComponent):
@@ -253,7 +346,8 @@ nodes_with_scores = [
     NodeWithScore(node=TextNode(&quot;To revert a failed deployment...&quot;),   score=0.994),
 ]</code></pre>
 
-<p>The score travels with the node through the entire downstream pipeline — postprocessors can use it to filter, rerankers can replace it, and <code>response.source_nodes</code> exposes it to your application for citation confidence scores.</p>
+<p>The score travels with the node through the entire downstream pipeline — postprocessors can use it to filter, rerankers can replace it, and <code>response.<mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">source_nodes</mark></code> exposes it to your application for citation confidence scores.</p>
 
 <hr>
 
@@ -274,7 +368,8 @@ nodes_with_scores = [
 <tr><td>10,000,000</td><td>60 GB</td><td>seconds — unusable</td></tr>
 </tbody></table>
 
-<p>At scale you swap <code>SimpleVectorStore</code> for a vector database that uses <strong>Approximate Nearest Neighbor (ANN)</strong> algorithms. The most common: HNSW (used by Chroma, Weaviate, Qdrant) and IVF (used by Pinecone, Faiss). These trade a tiny recall loss (finding 99.x% of true top-k instead of 100%) for sub-millisecond queries over billions of vectors.</p>
+<p>At scale you swap <code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">SimpleVectorStore</mark></code> for a vector database that uses <strong>Approximate Nearest Neighbor (ANN)</strong> algorithms. The most common: HNSW (used by Chroma, Weaviate, Qdrant) and IVF (used by Pinecone, Faiss). These trade a tiny recall loss (finding 99.x% of true top-k instead of 100%) for sub-millisecond queries over billions of vectors.</p>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 220" xmlns="http://www.w3.org/2000/svg"><title>O(N) vs ANN</title><rect x="15" y="15" width="300" height="160" rx="12" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="7 4"/><text x="29" y="33" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#27ae60">Day One - SimpleVectorStore</text><rect x="43.0" y="58.0" width="250" height="80" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="40.0" y="55.0" width="250" height="80" rx="10" fill="#fff" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165.0" y="78.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Brute-force numpy loop</text><text x="165.0" y="95.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">O(N) time  Exact top-k</text><text x="165.0" y="112.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Max ~100k nodes</text><rect x="365" y="15" width="300" height="160" rx="12" fill="#fdebd0" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="7 4"/><text x="379" y="33" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#e67e22">Production - External Vector DB</text><rect x="393.0" y="58.0" width="250" height="80" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="390.0" y="55.0" width="250" height="80" rx="10" fill="#fff" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515.0" y="78.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">ANN index HNSW / IVF</text><text x="515.0" y="95.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">O(log N) time  99.9% recall</text><text x="515.0" y="112.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Billions of nodes</text><line x1="290.0" y1="95.0" x2="390.0" y2="95.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="379.0,100.0 390.0,95.0 379.0,90.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><rect x="271.0" y="85.0" width="138" height="20" rx="4" fill="white" stroke="#555" stroke-width="1"/><text x="340.0" y="100.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#555">Swap vector_store=</text></svg></div></p>
 

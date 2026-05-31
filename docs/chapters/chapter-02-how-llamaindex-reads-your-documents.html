@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 2: How LlamaIndex Reads Your Documents</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q2" style="color:#1d4ed8;background:#dbeafe;border-color:#1d4ed880" title="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">📋 Q2 · Chunk size</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q4" style="color:#b45309;background:#fef3c7;border-color:#b4530980" title="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">📋 Q4 · Debugging</a>
+</div>
 
 <hr>
 
@@ -243,7 +335,8 @@ Our refund policy allows returns within 30 days...</code></pre>
 <tr><td><code>CHILD</code></td><td>large chunk → smaller chunk</td><td>Hierarchical chunking (Ch. 3)</td></tr>
 </tbody></table>
 
-<p>When you call <code>response.source_nodes</code> on a query response, you are walking the <code>SOURCE</code> relationship from each retrieved chunk back to its original document. That is how citations work.</p>
+<p>When you call <code>response.<mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">source_nodes</mark></code> on a query response, you are walking the <code>SOURCE</code> relationship from each retrieved chunk back to its original document. That is how citations work.</p>
 
 <hr>
 
@@ -475,7 +568,9 @@ for i in range(0, len(all_files), BATCH_SIZE):
 
 <h2>What's next</h2>
 
-<p>In Chapter 3, we take these <code>Document</code> objects and cut them into searchable chunks. We will cover why you cannot embed a 100-page document as one unit, how the <code>SentenceSplitter</code> works internally (including the <code>chunk_overlap</code> trick), and how chunking builds the <code>PREV</code> / <code>NEXT</code> / <code>SOURCE</code> relationship graph we introduced in this chapter.</p>
+<p>In Chapter 3, we take these <code>Document</code> objects and cut them into searchable chunks. We will cover why you cannot embed a 100-page document as one unit, how the <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">SentenceSplitter</mark></code> works internally (including the <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">chunk_overlap</mark></code> trick), and how chunking builds the <code>PREV</code> / <code>NEXT</code> / <code>SOURCE</code> relationship graph we introduced in this chapter.</p>
 
   </div>
   <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-01-the-problem-with-llms-and-private-data.html"><div class="nav-dir">← Previous</div>The Problem with LLMs and Private Data</a><a class="ch-nav-btn ch-nav-next" href="chapter-03-chunking-turning-documents-into-searchable-pieces.html"><div class="nav-dir">Next →</div>Chunking — Turning Documents into Searchable Pieces</a></nav>

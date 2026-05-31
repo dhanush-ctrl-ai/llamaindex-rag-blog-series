@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,15 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 9: Scaling Ingestion to 10 Million Documents</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q1" style="color:#6d28d9;background:#ede9fe;border-color:#6d28d980" title="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">📋 Q1 · System design</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q7" style="color:#7c3aed;background:#f3e8ff;border-color:#7c3aed80" title="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">📋 Q7 · Freshness</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q9" style="color:#c2410c;background:#ffedd5;border-color:#c2410c80" title="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">📋 Q9 · Scale</a>
+</div>
 
 <hr>
 
@@ -125,7 +219,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <h3>Why it appears</h3>
 
-<p><code>pipeline.run()</code> with <code>num_workers=None</code> (the default) runs a single Python process. It processes documents one by one: load, split, embed, store, repeat. The embedding step calls an API (or a local model), waits for the response, then processes the next batch.</p>
+<p><code>pipeline.run()</code> with <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark>=None</code> (the default) runs a single Python process. It processes documents one by one: load, split, embed, store, repeat. The embedding step calls an API (or a local model), waits for the response, then processes the next batch.</p>
 
 <p>For 10 million documents averaging 5,000 words each, single-threaded at 200ms per embed batch:</p>
 
@@ -133,7 +228,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 100M chunks ÷ 10 per batch = 10M API calls
 10M calls × 200ms = 2,000,000 seconds = 23 days</code></pre>
 
-<h3>The fix: <code>num_workers</code></h3>
+<h3>The fix: <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark></code></h3>
 
 <pre><code class="language-python"># Before — single process
 nodes = pipeline.run(documents=documents)
@@ -144,11 +240,14 @@ nodes = pipeline.run(documents=documents, num_workers=4)
 # Async version — overlaps API I/O waits within each process
 nodes = await pipeline.arun(documents=documents, num_workers=4)</code></pre>
 
-<p>Internally, <code>num_workers</code> calls <code>multiprocessing.Pool(num_workers)</code> and uses <code>p.starmap(run_transformations, zip(node_batches, ...))</code>. Each process gets an equal slice of the node list and runs the full transformation chain independently.</p>
+<p>Internally, <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark></code> calls <code>multiprocessing.Pool(<mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark>)</code> and uses <code>p.starmap(run_transformations, zip(node_batches, ...))</code>. Each process gets an equal slice of the node list and runs the full transformation chain independently.</p>
 
 <p>Why <code>multiprocessing</code> and not <code>threading</code>? Python's GIL prevents true thread parallelism for CPU-bound work. Separate processes bypass the GIL. The tradeoff: higher memory overhead (each process loads the embed model) and inter-process serialization cost.</p>
 
-<p>For API-based embed models (where work is I/O, not CPU), the async path (<code>arun</code>) is usually faster — it fires multiple HTTP requests concurrently within one process.</p>
+<p>For API-based embed models (where work is I/O, not CPU), the async path (<code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">arun</mark></code>) is usually faster — it fires multiple HTTP requests concurrently within one process.</p>
 
 <hr>
 
@@ -162,7 +261,8 @@ nodes = await pipeline.arun(documents=documents, num_workers=4)</code></pre>
 
 <p>This is pure waste. The fix has two parts: a transformation cache and a document-level deduplication strategy.</p>
 
-<h3>Fix part A: <code>IngestionCache</code> — skip unchanged chunks</h3>
+<h3>Fix part A: <code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">IngestionCache</mark></code> — skip unchanged chunks</h3>
 
 <pre><code class="language-python">from llama_index.core.ingestion import IngestionCache
 from llama_index.core.ingestion.cache import RedisCache
@@ -177,7 +277,8 @@ pipeline = IngestionPipeline(
 
 <p>Cache key = <code>hash(node_content + transformation_class + transformation_params)</code>. Same chunk, same model, same settings → cache hit, zero API call. The cache persists in Redis across restarts and deployments.</p>
 
-<h3>Fix part B: <code>DocstoreStrategy</code> — skip unchanged documents</h3>
+<h3>Fix part B: <code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">DocstoreStrategy</mark></code> — skip unchanged documents</h3>
 
 <pre><code class="language-python">from llama_index.core.ingestion import DocstoreStrategy
 from llama_index.storage.docstore.redis import RedisDocumentStore
@@ -200,7 +301,8 @@ pipeline = IngestionPipeline(
 
 <h3>Why it appears</h3>
 
-<p><code>SimpleVectorStore</code> is a Python dict. <code>SimpleDocumentStore</code> is also in memory. At 10M nodes × 1536 floats × 4 bytes = <strong>60GB</strong> just for embeddings. Plus raw text in the docstore. A single machine cannot hold this, and it evaporates on every restart.</p>
+<p><code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">SimpleVectorStore</mark></code> is a Python dict. <code>SimpleDocumentStore</code> is also in memory. At 10M nodes × 1536 floats × 4 bytes = <strong>60GB</strong> just for embeddings. Plus raw text in the docstore. A single machine cannot hold this, and it evaporates on every restart.</p>
 
 <h3>The fix: swap every storage layer</h3>
 
@@ -237,7 +339,8 @@ pipeline = IngestionPipeline(
 
 <p>OpenAI's embedding API has rate limits: tokens per minute (TPM) and requests per minute (RPM). Hit the limit and the API returns <code>429 Too Many Requests</code>. Your pipeline stalls or crashes.</p>
 
-<p>At <code>embed_batch_size=10</code> (the default), 100M chunks = 10M API calls. Even with concurrency, you will hit TPM limits.</p>
+<p>At <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">embed_batch_size</mark>=10</code> (the default), 100M chunks = 10M API calls. Even with concurrency, you will hit TPM limits.</p>
 
 <h3>Fix A: Switch to a local embed model — no rate limit</h3>
 
@@ -271,7 +374,8 @@ nodes = await pipeline.arun(documents=documents, num_workers=4)</code></pre>
 
 <h3>Why it appears</h3>
 
-<p>Even with <code>num_workers=8</code> you are limited to one machine's CPU cores. For 10M documents, even a 32-core machine with 8 workers takes 1–2 hours per run. If that machine restarts mid-run, you restart from scratch.</p>
+<p>Even with <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark>=8</code> you are limited to one machine's CPU cores. For 10M documents, even a 32-core machine with 8 workers takes 1–2 hours per run. If that machine restarts mid-run, you restart from scratch.</p>
 
 <h3>The fix: distributed worker pool</h3>
 
@@ -296,7 +400,8 @@ for i in range(0, len(all_doc_ids), batch_size):
     batch = all_doc_ids[i:i+batch_size]
     celery_task.delay(batch)   # or SQS.send_message(batch)</code></pre>
 
-<p>The <code>UPSERTS_AND_DELETE</code> deduplication strategy ensures two workers processing the same document do not create duplicate embeddings — the docstore hash check is the single point of coordination.</p>
+<p>The <code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">UPSERTS_AND_DELETE</mark></code> deduplication strategy ensures two workers processing the same document do not create duplicate embeddings — the docstore hash check is the single point of coordination.</p>
 
 <hr>
 
@@ -351,12 +456,17 @@ print(f&quot;Ingested {len(nodes)} nodes from {len(changed_docs)} changed docume
 <h2>Day One vs Production at a glance</h2>
 
 <table><thead><tr><th>Concern</th><th>Day One</th><th>Production (10M docs)</th></tr></thead><tbody>
-<tr><td>Parallelism</td><td>Single process</td><td><code>num_workers=4+</code>, <code>arun()</code></td></tr>
+<tr><td>Parallelism</td><td>Single process</td><td><code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark>=4+</code>, <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">arun</mark>()</code></td></tr>
 <tr><td>Embed model</td><td>OpenAI fallback, batch=10</td><td>Local BAAI/bge, batch=64</td></tr>
-<tr><td>Vector store</td><td><code>SimpleVectorStore</code> (RAM)</td><td>Pinecone / Weaviate / pgvector</td></tr>
+<tr><td>Vector store</td><td><code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">SimpleVectorStore</mark></code> (RAM)</td><td>Pinecone / Weaviate / pgvector</td></tr>
 <tr><td>Doc store</td><td><code>SimpleDocumentStore</code> (RAM)</td><td>Redis / MongoDB</td></tr>
-<tr><td>Cache</td><td>None</td><td><code>IngestionCache</code> + Redis</td></tr>
-<tr><td>Deduplication</td><td>None</td><td><code>UPSERTS_AND_DELETE</code></td></tr>
+<tr><td>Cache</td><td>None</td><td><code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">IngestionCache</mark></code> + Redis</td></tr>
+<tr><td>Deduplication</td><td>None</td><td><code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">UPSERTS_AND_DELETE</mark></code></td></tr>
 <tr><td>Horizontal scale</td><td>1 machine</td><td>Worker pool + message queue</td></tr>
 <tr><td>Cost per daily run</td><td>Re-embeds everything</td><td>Embeds only changed chunks</td></tr>
 <tr><td>Failure recovery</td><td>Restart from scratch</td><td>Resume from last checkpoint</td></tr>

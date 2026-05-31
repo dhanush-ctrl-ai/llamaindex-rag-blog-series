@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 4: Embeddings — Giving Text a Location in Meaning-Space</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q7" style="color:#7c3aed;background:#f3e8ff;border-color:#7c3aed80" title="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">📋 Q7 · Freshness</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q9" style="color:#c2410c;background:#ffedd5;border-color:#c2410c80" title="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">📋 Q9 · Scale</a>
+</div>
 
 <hr>
 
@@ -363,7 +455,8 @@ print(f&quot;Similarity: {sim:.4f}&quot;)   # should be high, ~0.85+</code></pre
 
 <h3>Fix 1: Increase batch size</h3>
 
-<p>The default <code>embed_batch_size=10</code> is conservative for API rate limits. For local models, it should be much higher:</p>
+<p>The default <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">embed_batch_size</mark>=10</code> is conservative for API rate limits. For local models, it should be much higher:</p>
 
 <pre><code class="language-python">from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
@@ -480,9 +573,12 @@ print(f&quot;Ingested {len(nodes)} chunks&quot;)</code></pre>
 <table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
 <tr><td>Model selection</td><td>Resolution chain (silent OpenAI fallback)</td><td><code>Settings.embed_model</code> — always explicit</td></tr>
 <tr><td>Batch size</td><td>10 (API default)</td><td>64–100+ (tuned to model)</td></tr>
-<tr><td>Parallelism</td><td>Sequential</td><td><code>arun()</code> + <code>num_workers=4</code></td></tr>
+<tr><td>Parallelism</td><td>Sequential</td><td><code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">arun</mark>()</code> + <code><mark class="ic ic-q9" style="background:#ffedd5;color:#c2410c;text-decoration-color:#c2410c44" data-tip="Asked in interviews at Google, Amazon, Databricks, Snowflake
+Q9: Scale ingestion to 10 million documents">num_workers</mark>=4</code></td></tr>
 <tr><td>Storage</td><td>In-memory</td><td>Persistent vector store</td></tr>
-<tr><td>Caching</td><td>None</td><td><code>IngestionCache</code> + Redis</td></tr>
+<tr><td>Caching</td><td>None</td><td><code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">IngestionCache</mark></code> + Redis</td></tr>
 <tr><td>Re-ingestion</td><td>Re-embeds everything</td><td>Only changed chunks</td></tr>
 <tr><td>Cost</td><td>Unpredictable</td><td>Predictable (mostly cache hits)</td></tr>
 <tr><td>Data privacy</td><td>Data sent to OpenAI</td><td>Local model, data stays on-prem</td></tr>
@@ -524,7 +620,8 @@ verify_embedding_consistency(Settings.embed_model)</code></pre>
 
 <h2>What's next</h2>
 
-<p>In Chapter 5, we put everything together: the <code>IngestionPipeline</code> that connects loading → chunking → embedding into one orchestrated flow, and the <code>StorageContext</code> that decides where everything gets persisted. We will also cover <code>DocstoreStrategy</code> — how LlamaIndex tracks which documents have changed and skips re-processing the ones that have not.</p>
+<p>In Chapter 5, we put everything together: the <code>IngestionPipeline</code> that connects loading → chunking → embedding into one orchestrated flow, and the <code>StorageContext</code> that decides where everything gets persisted. We will also cover <code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">DocstoreStrategy</mark></code> — how LlamaIndex tracks which documents have changed and skips re-processing the ones that have not.</p>
 
   </div>
   <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-03-chunking-turning-documents-into-searchable-pieces.html"><div class="nav-dir">← Previous</div>Chunking — Turning Documents into Searchable Pieces</a><a class="ch-nav-btn ch-nav-next" href="chapter-05-the-ingestion-pipeline-the-assembly-line.html"><div class="nav-dir">Next →</div>The Ingestion Pipeline — The Assembly Line</a></nav>

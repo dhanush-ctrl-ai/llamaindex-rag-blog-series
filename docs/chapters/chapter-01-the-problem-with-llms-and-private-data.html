@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,18 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 1: The Problem with LLMs and Private Data</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q1" style="color:#6d28d9;background:#ede9fe;border-color:#6d28d980" title="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">📋 Q1 · System design</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q3" style="color:#0f766e;background:#ccfbf1;border-color:#0f766e80" title="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">📋 Q3 · RAG vs <mark class="ic ic-q3" style="background:#ccfbf1;color:#0f766e;text-decoration-color:#0f766e44" data-tip="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">fine-tuning</mark></a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q4" style="color:#b45309;background:#fef3c7;border-color:#b4530980" title="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">📋 Q4 · Debugging</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q5" style="color:#be185d;background:#fce7f3;border-color:#be185d80" title="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">📋 Q5 · Hybrid search</a>
+</div>
 
 <hr>
 
@@ -125,7 +222,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <p>Every LLM is trained on a snapshot of public data — Wikipedia, GitHub, Stack Overflow, books, arXiv papers. That training ends at a cutoff date. After that, the model is frozen. It cannot learn new facts unless you retrain it.</p>
 
-<p>Your company's data is private, constantly changing, and was never in the training set. When you ask an LLM about your internal API design, it has two choices: say "I don't know", or make something up. Most models choose the second option. This is called <strong>hallucination</strong>.</p>
+<p>Your company's data is private, constantly changing, and was never in the training set. When you ask an LLM about your internal API design, it has two choices: say "I don't know", or make something up. Most models choose the second option. This is called <strong><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">hallucination</mark></strong>.</p>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 700 220" xmlns="http://www.w3.org/2000/svg"><title>LLM Knowledge Gap</title><rect x="33.0" y="38.0" width="220" height="110" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="30.0" y="35.0" width="220" height="110" rx="10" fill="#f0e6ff" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="140.0" y="72.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#9b59b6">LLM Knowledge</text><text x="140.0" y="90.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#9b59b6">Public Internet</text><text x="140.0" y="108.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#9b59b6">Frozen at cutoff</text><rect x="413.0" y="38.0" width="220" height="110" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="410.0" y="35.0" width="220" height="110" rx="10" fill="#fde8d8" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="520.0" y="72.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Your Knowledge</text><text x="520.0" y="90.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Private Docs &amp; Wikis</text><text x="520.0" y="108.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Always changing</text><rect x="293.0" y="73.0" width="80" height="40" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="290.0" y="70.0" width="80" height="40" rx="10" fill="#fff8e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="330.0" y="90.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">? gap ?</text><line x1="250.0" y1="90.0" x2="290.0" y2="90.0" stroke="#e67e22" stroke-width="1" stroke-dasharray="7 4" stroke-linecap="round"/><polygon points="279.0,95.0 290.0,90.0 279.0,85.0" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><line x1="410.0" y1="90.0" x2="370.0" y2="90.0" stroke="#e67e22" stroke-width="1" stroke-dasharray="7 4" stroke-linecap="round"/><polygon points="381.0,85.0 370.0,90.0 381.0,95.0" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><circle cx="6" cy="6" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/><circle cx="654" cy="6" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/><circle cx="6" cy="174" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/><circle cx="654" cy="174" r="5" fill="#c8f135" stroke="#111" stroke-width="1.5"/></svg></div></p>
 
@@ -165,9 +263,11 @@ Answer questions based on this.
 
 <p><strong>Why it fails:</strong></p>
 
-<p>Fine-tuning teaches the model <em>style and behavior</em> — how to format responses, what tone to use, which tasks to prioritize. It does not reliably teach <em>facts</em>. A model fine-tuned on your wiki will still hallucinate specific details. It has learned the pattern of your docs, not the content.</p>
+<p><mark class="ic ic-q3" style="background:#ccfbf1;color:#0f766e;text-decoration-color:#0f766e44" data-tip="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">Fine-tuning</mark> teaches the model <em>style and behavior</em> — how to format responses, what tone to use, which tasks to prioritize. It does not reliably teach <em>facts</em>. A model fine-tuned on your wiki will still hallucinate specific details. It has learned the pattern of your docs, not the content.</p>
 
-<p>More practically: fine-tuning costs thousands of dollars per run. Your wiki changes every day. You cannot re-fine-tune for every page edit. And even if you did, there is no way to cite which document an answer came from.</p>
+<p>More practically: <mark class="ic ic-q3" style="background:#ccfbf1;color:#0f766e;text-decoration-color:#0f766e44" data-tip="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">fine-tuning</mark> costs thousands of dollars per run. Your wiki changes every day. You cannot re-fine-tune for every page edit. And even if you did, there is no way to cite which document an answer came from.</p>
 
 <h3>Solution 3: Build a search engine over your docs</h3>
 
@@ -200,7 +300,8 @@ Answer questions based on this.
 
 <p><strong>Job 1 — Data Ingestion:</strong> It knows how to read 130+ data formats (PDF, Word, Notion, Slack, SQL, Google Drive, websites) and convert them into a standard internal format. You do not write PDF parsers. You use a loader.</p>
 
-<p><strong>Job 2 — Index Construction:</strong> It takes your documents and builds queryable structures — a <code>VectorStoreIndex</code> for semantic search, a <code>SummaryIndex</code> for summarization, a <code>KeywordTableIndex</code> for exact-match retrieval.</p>
+<p><strong>Job 2 — Index Construction:</strong> It takes your documents and builds queryable structures — a <code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">VectorStoreIndex</mark></code> for semantic search, a <code>SummaryIndex</code> for summarization, a <code>KeywordTableIndex</code> for exact-match retrieval.</p>
 
 <p><strong>Job 3 — Query Orchestration:</strong> It connects the index to the LLM, manages prompt templates, handles retrieval strategies, supports multi-step reasoning with agents, and gives you control over every stage.</p>
 
@@ -317,8 +418,10 @@ print(response.source_nodes)       # which chunks produced the answer</code></pr
 <tr><td>Embedding</td><td>OpenAI (10/batch)</td><td>OpenAI (10/batch)</td><td>OpenAI or local</td><td>Local GPU, batched</td></tr>
 <tr><td>Deduplication</td><td>None</td><td>None</td><td>DocstoreStrategy</td><td>DocstoreStrategy + cache</td></tr>
 <tr><td>Parallelism</td><td>Single process</td><td>Single process</td><td>num_workers=4</td><td>Worker pool + queue</td></tr>
-<tr><td>Retrieval</td><td>top-k cosine</td><td>top-k cosine</td><td>Hybrid (BM25 + vector)</td><td>ANN index</td></tr>
-<tr><td>Observability</td><td>None</td><td>Logging</td><td>CallbackManager</td><td>Full tracing + metrics</td></tr>
+<tr><td>Retrieval</td><td>top-k cosine</td><td>top-k cosine</td><td>Hybrid (<mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark> + vector)</td><td>ANN index</td></tr>
+<tr><td>Observability</td><td>None</td><td>Logging</td><td><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">CallbackManager</mark></td><td>Full tracing + metrics</td></tr>
 </tbody></table>
 
 <p>Each chapter in this series adds one layer. By the end, you will have built the full production system.</p>

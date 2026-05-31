@@ -90,6 +90,92 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +190,17 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 3: Chunking — Turning Documents into Searchable Pieces</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q2" style="color:#1d4ed8;background:#dbeafe;border-color:#1d4ed880" title="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">📋 Q2 · Chunk size</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q7" style="color:#7c3aed;background:#f3e8ff;border-color:#7c3aed80" title="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">📋 Q7 · Freshness</a>
+</div>
+
+
+
+
 
 <hr>
 
@@ -133,19 +230,24 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 190" xmlns="http://www.w3.org/2000/svg"><title>Chunk Size Tension</title><rect x="15.5" y="33.0" width="155" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="12.5" y="30.0" width="155" height="90" rx="10" fill="#fadbd8" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="90.0" y="57.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#c0392b">Too small</text><text x="90.0" y="75.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#c0392b">50 tokens</text><text x="90.0" y="93.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#c0392b">Loses context</text><rect x="260.5" y="33.0" width="165" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="257.5" y="30.0" width="165" height="90" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="57.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#27ae60">Sweet spot</text><text x="340.0" y="75.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#27ae60">256–512 tokens</text><text x="340.0" y="93.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#27ae60">Complete thought</text><rect x="515.5" y="33.0" width="155" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="512.5" y="30.0" width="155" height="90" rx="10" fill="#fdebd0" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="590.0" y="57.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Too large</text><text x="590.0" y="75.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">2000+ tokens</text><text x="590.0" y="93.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Diluted signal</text><line x1="168" y1="75" x2="257" y2="75" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3"/><line x1="422" y1="75" x2="512" y2="75" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3"/><text x="340" y="135" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" fill="#aaa">← decrease   chunk_size   increase →</text></svg></div></p>
 
-<p>Default in LlamaIndex: <code>chunk_size=1024</code> tokens, <code>chunk_overlap=200</code> tokens. This is a safe general-purpose starting point. You will tune it based on your specific documents in production.</p>
+<p>Default in LlamaIndex: <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">chunk_size</mark>=1024</code> tokens, <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">chunk_overlap</mark>=200</code> tokens. This is a safe general-purpose starting point. You will tune it based on your specific documents in production.</p>
 
 <hr>
 
-<h2>How <code>SentenceSplitter</code> works internally</h2>
+<h2>How <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">SentenceSplitter</mark></code> works internally</h2>
 
-<p><code>SentenceSplitter</code> is the default chunker. It does not blindly cut at token N — it tries to cut at sentence boundaries, keeping chunks coherent.</p>
+<p><code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">SentenceSplitter</mark></code> is the default chunker. It does not blindly cut at token N — it tries to cut at sentence boundaries, keeping chunks coherent.</p>
 
 <p>Here is the internal algorithm, step by step:</p>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 680 530" xmlns="http://www.w3.org/2000/svg"><title>SentenceSplitter Steps</title><rect x="83.0" y="11.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="8.0" width="480" height="44" rx="10" fill="#f0f0f0" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="30.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#888">Document text (raw string)</text><rect x="83.0" y="81.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="78.0" width="480" height="44" rx="10" fill="#fff" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#333">Tokenize with tiktoken / NLTK</text><rect x="83.0" y="151.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="148.0" width="480" height="44" rx="10" fill="#fff" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="170.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#333">Group tokens respecting chunk_size</text><rect x="83.0" y="221.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="218.0" width="480" height="44" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="240.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#2980b9">Cut at sentence boundary</text><rect x="83.0" y="291.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="288.0" width="480" height="44" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="310.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#27ae60">Add chunk_overlap — 200-token bridge</text><line x1="320.0" y1="52.0" x2="320.0" y2="78.0" stroke="#666" stroke-width="2"  stroke-linecap="round"/><polygon points="315.0,67.0 320.0,78.0 325.0,67.0" fill="#666" stroke="#666" stroke-width="1" stroke-linejoin="round"/><line x1="320.0" y1="122.0" x2="320.0" y2="148.0" stroke="#666" stroke-width="2"  stroke-linecap="round"/><polygon points="315.0,137.0 320.0,148.0 325.0,137.0" fill="#666" stroke="#666" stroke-width="1" stroke-linejoin="round"/><line x1="320.0" y1="192.0" x2="320.0" y2="218.0" stroke="#666" stroke-width="2"  stroke-linecap="round"/><polygon points="315.0,207.0 320.0,218.0 325.0,207.0" fill="#666" stroke="#666" stroke-width="1" stroke-linejoin="round"/><line x1="320.0" y1="262.0" x2="320.0" y2="288.0" stroke="#666" stroke-width="2"  stroke-linecap="round"/><polygon points="315.0,277.0 320.0,288.0 325.0,277.0" fill="#666" stroke="#666" stroke-width="1" stroke-linejoin="round"/><rect x="83.0" y="361.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="358.0" width="480" height="44" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="380.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#e67e22">Record start_char_idx and end_char_idx</text><rect x="83.0" y="431.0" width="480" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="80.0" y="428.0" width="480" height="44" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="320.0" y="450.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="600" fill="#9b59b6">Assign SOURCE / PREV / NEXT relationships</text><line x1="320.0" y1="332.0" x2="320.0" y2="358.0" stroke="#666" stroke-width="2"  stroke-linecap="round"/><polygon points="315.0,347.0 320.0,358.0 325.0,347.0" fill="#666" stroke="#666" stroke-width="1" stroke-linejoin="round"/><line x1="320.0" y1="402.0" x2="320.0" y2="428.0" stroke="#666" stroke-width="2"  stroke-linecap="round"/><polygon points="315.0,417.0 320.0,428.0 325.0,417.0" fill="#666" stroke="#666" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
 
-<p>The <code>chunk_overlap</code> is the key innovation. Without it, a thought that straddles two chunk boundaries gets split in half and neither chunk can answer questions about it. With overlap, both chunks carry the bridging context.</p>
+<p>The <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">chunk_overlap</mark></code> is the key innovation. Without it, a thought that straddles two chunk boundaries gets split in half and neither chunk can answer questions about it. With overlap, both chunks carry the bridging context.</p>
 
 <pre><code class="language-">Document text:
 &quot;...The deployment pipeline runs in three stages.
@@ -165,7 +267,8 @@ chunk_2: &quot;First, the build stage compiles the code. Second, the test stage 
 
 <h2>The graph that gets built</h2>
 
-<p>When <code>SentenceSplitter</code> processes a document, it does not just produce a flat list of strings. It produces a linked structure of <code>TextNode</code> objects with relationships set.</p>
+<p>When <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">SentenceSplitter</mark></code> processes a document, it does not just produce a flat list of strings. It produces a linked structure of <code>TextNode</code> objects with relationships set.</p>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 330" xmlns="http://www.w3.org/2000/svg"><title>Linked Nodes with Overlap</title><rect x="255.5" y="28.0" width="175" height="50" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="252.5" y="25.0" width="175" height="50" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="41.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Document</text><text x="340.0" y="58.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">doc-001</text><rect x="25.5" y="165.0" width="175" height="76" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="162.0" width="175" height="76" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="110.0" y="183.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">TextNode aaa</text><text x="110.0" y="200.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">chunk 1</text><text x="110.0" y="217.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">start=0  end=512</text><rect x="255.5" y="165.0" width="175" height="76" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="252.5" y="162.0" width="175" height="76" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="183.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">TextNode bbb</text><text x="340.0" y="200.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">chunk 2</text><text x="340.0" y="217.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">start=312  end=824</text><rect x="485.5" y="165.0" width="175" height="76" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="482.5" y="162.0" width="175" height="76" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="570.0" y="183.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">TextNode ccc</text><text x="570.0" y="200.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">chunk 3</text><text x="570.0" y="217.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">start=624 end=1136</text><line x1="168.3" y1="162.0" x2="301.7" y2="75.0" stroke="#2980b9" stroke-width="1" stroke-dasharray="7 4" stroke-linecap="round"/><polygon points="295.2,85.2 301.7,75.0 289.7,76.8" fill="#2980b9" stroke="#2980b9" stroke-width="1" stroke-linejoin="round"/><rect x="208.0" y="108.5" width="54" height="20" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="235.0" y="123.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">SOURCE</text><line x1="340.0" y1="162.0" x2="340.0" y2="75.0" stroke="#2980b9" stroke-width="1" stroke-dasharray="7 4" stroke-linecap="round"/><polygon points="345.0,86.0 340.0,75.0 335.0,86.0" fill="#2980b9" stroke="#2980b9" stroke-width="1" stroke-linejoin="round"/><rect x="313.0" y="108.5" width="54" height="20" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="340.0" y="123.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">SOURCE</text><line x1="511.7" y1="162.0" x2="378.3" y2="75.0" stroke="#2980b9" stroke-width="1" stroke-dasharray="7 4" stroke-linecap="round"/><polygon points="390.3,76.8 378.3,75.0 384.8,85.2" fill="#2980b9" stroke="#2980b9" stroke-width="1" stroke-linejoin="round"/><rect x="418.0" y="108.5" width="54" height="20" rx="4" fill="white" stroke="#2980b9" stroke-width="1"/><text x="445.0" y="123.5" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#2980b9">SOURCE</text><line x1="197.5" y1="200.0" x2="252.5" y2="200.0" stroke="#27ae60" stroke-width="2"  stroke-linecap="round"/><polygon points="241.5,205.0 252.5,200.0 241.5,195.0" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="205.0" y="190.0" width="40" height="20" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="225.0" y="205.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">NEXT</text><line x1="427.5" y1="200.0" x2="482.5" y2="200.0" stroke="#27ae60" stroke-width="2"  stroke-linecap="round"/><polygon points="471.5,205.0 482.5,200.0 471.5,195.0" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="435.0" y="190.0" width="40" height="20" rx="4" fill="white" stroke="#27ae60" stroke-width="1"/><text x="455.0" y="205.0" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#27ae60">NEXT</text><rect x="208" y="226" width="156" height="18" rx="4" fill="#c8f135" opacity="0.6"/><text x="286" y="239" text-anchor="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" fill="#555">200-token overlap</text></svg></div></p>
 
@@ -177,7 +280,8 @@ chunk_2: &quot;First, the build stage compiles the code. Second, the test stage 
 
 <p>LlamaIndex ships several chunkers. Each one optimises for a different document type.</p>
 
-<h3><code>SentenceSplitter</code> — general purpose</h3>
+<h3><code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">SentenceSplitter</mark></code> — general purpose</h3>
 
 <p>Cuts at sentence boundaries. Best for prose documents: wiki pages, documentation, support articles.</p>
 
@@ -199,7 +303,8 @@ splitter = TokenTextSplitter(
     chunk_overlap=50,
 )</code></pre>
 
-<h3><code>CodeSplitter</code> — structure-aware for code</h3>
+<h3><code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">CodeSplitter</mark></code> — structure-aware for code</h3>
 
 <p>Uses the tree-sitter AST parser to split code at function and class boundaries, not at line N. A function is kept together as one chunk even if it is 200 lines. This is the right chunker for your codebase documentation.</p>
 
@@ -211,7 +316,8 @@ splitter = CodeSplitter(
     chunk_lines_overlap=5,
 )</code></pre>
 
-<h3><code>HierarchicalNodeParser</code> — for complex queries</h3>
+<h3><code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">HierarchicalNodeParser</mark></code> — for complex queries</h3>
 
 <p>This is the most powerful chunker, and the most nuanced. Instead of one chunk size, it creates three levels of chunks from the same document:</p>
 
@@ -403,7 +509,8 @@ print(f&quot;Total chunks: {len(all_nodes)}&quot;)</code></pre>
 
 <h3>Fix 3: Hierarchical chunking for the full production setup</h3>
 
-<p>For a 50,000-page wiki where some queries are broad ("summarise our deployment philosophy") and some are precise ("what's the rollback command for Kubernetes"), <code>HierarchicalNodeParser</code> handles both:</p>
+<p>For a 50,000-page wiki where some queries are broad ("summarise our deployment philosophy") and some are precise ("what's the rollback command for Kubernetes"), <code><mark class="ic ic-q2" style="background:#dbeafe;color:#1d4ed8;text-decoration-color:#1d4ed844" data-tip="Asked in interviews at Amazon, Cohere, Databricks, OpenAI
+Q2: How do you choose chunk size?">HierarchicalNodeParser</mark></code> handles both:</p>
 
 <pre><code class="language-python">from llama_index.core.node_parser import HierarchicalNodeParser, get_leaf_nodes
 from llama_index.core import VectorStoreIndex
@@ -442,7 +549,8 @@ index = VectorStoreIndex(leaf_nodes, storage_context=storage_context)
 <tr><td>Memory</td><td>All docs in RAM</td><td>Batched processing</td></tr>
 <tr><td>Chunk strategy</td><td>One size for all</td><td>Per-format (prose, code, structured)</td></tr>
 <tr><td>Structure</td><td>Flat chunks</td><td>Hierarchical (2048/512/128)</td></tr>
-<tr><td>Re-chunking</td><td>Always re-runs</td><td>Cached by <code>IngestionCache</code></td></tr>
+<tr><td>Re-chunking</td><td>Always re-runs</td><td>Cached by <code><mark class="ic ic-q7" style="background:#f3e8ff;color:#7c3aed;text-decoration-color:#7c3aed44" data-tip="Asked in interviews at Amazon, LinkedIn, Stripe, Notion
+Q7: Keep knowledge base fresh with daily updates">IngestionCache</mark></code></td></tr>
 <tr><td>Chunk size</td><td>Default 1024</td><td>Tuned to your documents</td></tr>
 </tbody></table>
 

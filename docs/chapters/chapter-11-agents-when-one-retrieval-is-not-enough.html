@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,16 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 11: Agents — When One Retrieval Is Not Enough</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q3" style="color:#0f766e;background:#ccfbf1;border-color:#0f766e80" title="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">📋 Q3 · RAG vs <mark class="ic ic-q3" style="background:#ccfbf1;color:#0f766e;text-decoration-color:#0f766e44" data-tip="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">fine-tuning</mark></a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q6" style="color:#15803d;background:#dcfce7;border-color:#15803d80" title="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">📋 Q6 · Evaluation</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q10" style="color:#6d28d9;background:#ede9fe;border-color:#6d28d980" title="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">📋 Q10 · Agents</a>
+</div>
 
 <hr>
 
@@ -127,17 +222,21 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <hr>
 
-<h2>The AgentRunner architecture</h2>
+<h2>The <mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">AgentRunner</mark> architecture</h2>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 320" xmlns="http://www.w3.org/2000/svg"><title>Agent Architecture</title><rect x="253.0" y="22.0" width="180" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="250.0" y="19.0" width="180" height="42" rx="10" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="40.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#888">User message</text><rect x="243.0" y="100.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="240.0" y="97.0" width="200" height="46" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="111.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">AgentRunner</text><text x="340.0" y="128.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">orchestrates the loop</text><rect x="243.0" y="180.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="240.0" y="177.0" width="200" height="46" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="191.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">AgentWorker</text><text x="340.0" y="208.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">step logic ReAct</text><rect x="453.0" y="180.0" width="160" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="450.0" y="177.0" width="160" height="46" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="530.0" y="183.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Tools</text><text x="530.0" y="200.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">QueryEngineTool</text><text x="530.0" y="217.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">FunctionTool</text><rect x="73.0" y="180.0" width="160" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="70.0" y="177.0" width="160" height="46" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="150.0" y="191.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">AgentMemory</text><text x="150.0" y="208.5" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Chat history buffer</text><line x1="340.0" y1="61.0" x2="340.0" y2="97.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,86.0 340.0,97.0 345.0,86.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><line x1="340.0" y1="143.0" x2="340.0" y2="177.0" stroke="#2980b9" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,166.0 340.0,177.0 345.0,166.0" fill="#2980b9" stroke="#2980b9" stroke-width="1" stroke-linejoin="round"/><line x1="440.0" y1="200.0" x2="450.0" y2="200.0" stroke="#e67e22" stroke-width="2"  stroke-linecap="round"/><polygon points="439.0,205.0 450.0,200.0 439.0,195.0" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/><line x1="240.0" y1="200.0" x2="230.0" y2="200.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="241.0,195.0 230.0,200.0 241.0,205.0" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><line x1="450.0" y1="200.0" x2="440.0" y2="200.0" stroke="#e67e22" stroke-width="1" stroke-dasharray="7 4" stroke-linecap="round"/><polygon points="451.0,195.0 440.0,200.0 451.0,205.0" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
 
-<p><code>AgentRunner</code> manages the task lifecycle — it keeps track of completed steps, active tasks, and memory. <code>AgentWorker</code> implements the step logic — for ReAct agents this means parsing the LLM's Thought/Action/Observation format; for function-calling agents it means processing OpenAI-style tool call outputs.</p>
+<p><code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">AgentRunner</mark></code> manages the task lifecycle — it keeps track of completed steps, active tasks, and memory. <code>AgentWorker</code> implements the step logic — for ReAct agents this means parsing the LLM's Thought/Action/Observation format; for function-calling agents it means processing OpenAI-style tool call outputs.</p>
 
 <hr>
 
-<h2><code>QueryEngineTool</code> — wrapping your index as a tool</h2>
+<h2><code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">QueryEngineTool</mark></code> — wrapping your index as a tool</h2>
 
-<p>The bridge between agents and RAG is <code>QueryEngineTool</code>. It wraps any <code>QueryEngine</code> as a tool the agent can call. The tool description tells the LLM when to use it.</p>
+<p>The bridge between agents and RAG is <code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">QueryEngineTool</mark></code>. It wraps any <code>QueryEngine</code> as a tool the agent can call. The tool description tells the LLM when to use it.</p>
 
 <pre><code class="language-python">from llama_index.core.tools import QueryEngineTool
 
@@ -246,7 +345,8 @@ agent = ReActAgent.from_tools(
 
 <h2>Memory: conversation across turns</h2>
 
-<p>By default, <code>AgentRunner</code> maintains a chat history buffer. Multi-turn conversations work out of the box:</p>
+<p>By default, <code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">AgentRunner</mark></code> maintains a chat history buffer. Multi-turn conversations work out of the box:</p>
 
 <pre><code class="language-python"># Turn 1
 response1 = agent.chat(&quot;What is the staging rollback procedure?&quot;)
@@ -310,7 +410,8 @@ print(f&quot;\nFinal: {final.response}&quot;)</code></pre>
 
 <h2>The cost trade-off</h2>
 
-<table><thead><tr><th></th><th>QueryEngine</th><th>ReActAgent (avg 3 steps)</th></tr></thead><tbody>
+<table><thead><tr><th></th><th>QueryEngine</th><th><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">ReActAgent</mark> (avg 3 steps)</th></tr></thead><tbody>
 <tr><td>LLM calls</td><td>1</td><td>3–5</td></tr>
 <tr><td>Retrieval calls</td><td>1</td><td>1 per step = 3–5</td></tr>
 <tr><td>Latency</td><td>1–2s</td><td>5–15s</td></tr>
@@ -328,17 +429,25 @@ print(f&quot;\nFinal: {final.response}&quot;)</code></pre>
 
 <p>The system handles 10 million documents (Chapter 9), searches them semantically and by keyword (Chapter 8), synthesizes grounded answers (Chapter 7), traces every decision (Chapter 10), and reasons through multi-step questions (this chapter).</p>
 
-<p>The next areas to explore from here: <strong>evaluation</strong> (Ragas, DeepEval — measure retrieval precision and answer faithfulness automatically), <strong>fine-tuning your embed model</strong> on your domain's vocabulary, and <strong>structured outputs</strong> (getting the LLM to return JSON instead of prose for downstream processing).</p>
+<p>The next areas to explore from here: <strong>evaluation</strong> (<mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">Ragas</mark>, DeepEval — measure retrieval precision and answer <mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">faithfulness</mark> automatically), <strong><mark class="ic ic-q3" style="background:#ccfbf1;color:#0f766e;text-decoration-color:#0f766e44" data-tip="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">fine-tuning</mark> your embed model</strong> on your domain's vocabulary, and <strong>structured outputs</strong> (getting the LLM to return JSON instead of prose for downstream processing).</p>
 
 <p>The code for every chapter is in the GitHub repository. Each chapter's POC section runs independently — start with Chapter 1 and build up, or jump to the chapter that solves your current production problem.</p>
 
 <h2>Day One vs Production</h2>
 
 <table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
-<tr><td>Agent type</td><td><code>ReActAgent</code> with <code>verbose=True</code></td><td><code>ReActAgent</code> with structured logging</td></tr>
-<tr><td>Tools</td><td>1–2 <code>QueryEngineTool</code> wrappers</td><td>Multiple tools: RAG + <code>FunctionTool</code> for APIs</td></tr>
+<tr><td>Agent type</td><td><code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">ReActAgent</mark></code> with <code>verbose=True</code></td><td><code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">ReActAgent</mark></code> with structured logging</td></tr>
+<tr><td>Tools</td><td>1–2 <code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">QueryEngineTool</mark></code> wrappers</td><td>Multiple tools: RAG + <code><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">FunctionTool</mark></code> for APIs</td></tr>
 <tr><td>Memory</td><td>Default <code>ChatMemoryBuffer</code></td><td><code>ChatSummaryMemoryBuffer</code> with token limit</td></tr>
-<tr><td>max_iterations</td><td>10 (default)</td><td>5–8 (tighter budget)</td></tr>
+<tr><td><mark class="ic ic-q10" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at OpenAI, Anthropic, Google DeepMind
+Q10: Agent vs query engine — when to use each?">max_iterations</mark></td><td>10 (default)</td><td>5–8 (tighter budget)</td></tr>
 <tr><td>Async</td><td>Sync <code>.chat()</code></td><td>Async <code>.achat()</code> for concurrent sessions</td></tr>
 <tr><td>Error handling</td><td>Exception propagates</td><td>Catch <code>MaxIterationsError</code>, fallback to QueryEngine</td></tr>
 <tr><td>Cost control</td><td>Unbounded</td><td>Gate on query complexity — simple → QueryEngine</td></tr>
@@ -351,9 +460,12 @@ print(f&quot;\nFinal: {final.response}&quot;)</code></pre>
 
 <p>The natural next steps from here:</p>
 
-<p><strong>Evaluation</strong> — Use <a href="https://github.com/explodinggradients/ragas">Ragas</a> or <a href="https://github.com/confident-ai/deepeval">DeepEval</a> to measure retrieval precision and answer faithfulness automatically. Build a labelled eval set from engineer feedback (Chapter 10's thumbs up/down).</p>
+<p><strong>Evaluation</strong> — Use <a href="https://github.com/explodinggradients/ragas"><mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">Ragas</mark></a> or <a href="https://github.com/confident-ai/deepeval">DeepEval</a> to measure retrieval precision and answer <mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">faithfulness</mark> automatically. Build a labelled eval set from engineer feedback (Chapter 10's thumbs up/down).</p>
 
-<p><strong>Embed model fine-tuning</strong> — Fine-tune <code>BAAI/bge-base</code> on your domain's vocabulary using LlamaIndex's <code>EmbeddingAdapterFinetuneEngine</code>. A fine-tuned model on your company's specific terminology consistently outperforms the base model by 5–15% on retrieval precision.</p>
+<p><strong>Embed model <mark class="ic ic-q3" style="background:#ccfbf1;color:#0f766e;text-decoration-color:#0f766e44" data-tip="Asked in interviews at Google, Meta, Anthropic, Mistral
+Q3: RAG vs fine-tuning — when to use each?">fine-tuning</mark></strong> — Fine-tune <code>BAAI/bge-base</code> on your domain's vocabulary using LlamaIndex's <code>EmbeddingAdapterFinetuneEngine</code>. A fine-tuned model on your company's specific terminology consistently outperforms the base model by 5–15% on retrieval precision.</p>
 
 <p><strong>Structured outputs</strong> — Use <code>StructuredPredictor</code> to get JSON back instead of prose — useful when the RAG system feeds a downstream API or UI component that needs machine-readable output.</p>
 

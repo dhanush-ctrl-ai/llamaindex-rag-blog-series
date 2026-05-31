@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 10: Observability — Seeing Inside the Black Box</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q4" style="color:#b45309;background:#fef3c7;border-color:#b4530980" title="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">📋 Q4 · Debugging</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q6" style="color:#15803d;background:#dcfce7;border-color:#15803d80" title="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">📋 Q6 · Evaluation</a>
+</div>
 
 <hr>
 
@@ -119,7 +211,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <h2>The observability architecture</h2>
 
-<p>LlamaIndex instruments everything through a single <code>CallbackManager</code> that lives on the <code>Settings</code> singleton. Every component — retrievers, synthesizers, LLMs, embed models — fires events through this manager. You attach handlers that receive those events.</p>
+<p>LlamaIndex instruments everything through a single <code><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">CallbackManager</mark></code> that lives on the <code>Settings</code> singleton. Every component — retrievers, synthesizers, LLMs, embed models — fires events through this manager. You attach handlers that receive those events.</p>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 410" xmlns="http://www.w3.org/2000/svg"><title>Observability Architecture</title><rect x="230" y="19" width="220" height="42" rx="8" fill="#111"/><text x="340" y="40" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#fff">Settings.callback_manager</text><rect x="243.0" y="110.0" width="200" height="46" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="240.0" y="107.0" width="200" height="46" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="130.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#9b59b6">CallbackManager</text><line x1="340.0" y1="61.0" x2="340.0" y2="107.0" stroke="#555" stroke-width="2"  stroke-linecap="round"/><polygon points="335.0,96.0 340.0,107.0 345.0,96.0" fill="#555" stroke="#555" stroke-width="1" stroke-linejoin="round"/><rect x="25.5" y="217.0" width="155" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="22.5" y="214.0" width="155" height="52" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="100.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">VectorRetriever</text><text x="100.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">fires RETRIEVE</text><line x1="156.7" y1="214.0" x2="289.8" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="281.9,162.1 289.8,153.0 277.7,153.0" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="190.5" y="217.0" width="155" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="187.5" y="214.0" width="155" height="52" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="265.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6">Synthesizer</text><text x="265.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#9b59b6">fires SYNTHESIZE</text><line x1="282.7" y1="214.0" x2="324.3" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="322.3,164.9 324.3,153.0 314.0,159.3" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="360.5" y="217.0" width="145" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="357.5" y="214.0" width="145" height="52" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="430.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">LLM</text><text x="430.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">fires LLM events</text><line x1="408.7" y1="214.0" x2="358.8" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="369.7,158.3 358.8,153.0 361.9,164.7" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="518.0" y="217.0" width="120" height="52" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="515.0" y="214.0" width="120" height="52" rx="10" fill="#f9f9f9" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="575.0" y="232.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">EmbedModel</text><text x="575.0" y="248.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#888">fires EMBEDDING</text><line x1="519.5" y1="214.0" x2="389.1" y2="153.0" stroke="#aaa" stroke-width="1"  stroke-linecap="round"/><polygon points="401.2,153.1 389.1,153.0 397.0,162.2" fill="#aaa" stroke="#aaa" stroke-width="1" stroke-linejoin="round"/><rect x="53.0" y="327.0" width="160" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="50.0" y="324.0" width="160" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="130.0" y="337.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">LlamaDebugHandler</text><text x="130.0" y="353.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">print trace</text><line x1="317.5" y1="153.0" x2="150.5" y2="324.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="154.6,312.6 150.5,324.0 161.8,319.6" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="263.0" y="327.0" width="160" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="260.0" y="324.0" width="160" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="340.0" y="337.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">TokenCounting</text><text x="340.0" y="353.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Handler</text><line x1="340.0" y1="153.0" x2="340.0" y2="324.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="335.0,313.0 340.0,324.0 345.0,313.0" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/><rect x="478.0" y="327.0" width="150" height="42" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="475.0" y="324.0" width="150" height="42" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="550.0" y="337.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">Custom handler</text><text x="550.0" y="353.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#27ae60">your logger</text><line x1="362.5" y1="153.0" x2="529.5" y2="324.0" stroke="#27ae60" stroke-width="1"  stroke-linecap="round"/><polygon points="518.2,319.6 529.5,324.0 525.4,312.6" fill="#27ae60" stroke="#27ae60" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
 
@@ -143,7 +236,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <hr>
 
-<h2>Tool 1: <code>LlamaDebugHandler</code> — local development</h2>
+<h2>Tool 1: <code><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">LlamaDebugHandler</mark></code> — local development</h2>
 
 <p>The simplest handler. Collects all events in memory and prints a trace at the end of each query. Zero configuration.</p>
 
@@ -192,7 +286,8 @@ for e in llm_events:
 
 <h2>Tool 2: Token counting — measure cost</h2>
 
-<p>The <code>TokenCountingHandler</code> tracks every token used across all LLM and embed calls.</p>
+<p>The <code><mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">TokenCountingHandler</mark></code> tracks every token used across all LLM and embed calls.</p>
 
 <pre><code class="language-python">import tiktoken
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
@@ -270,9 +365,12 @@ Settings.callback_manager = CallbackManager([StructuredLogHandler()])</code></pr
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 240" xmlns="http://www.w3.org/2000/svg"><title>Four Key Metrics</title><rect x="20.5" y="58.0" width="175" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="17.5" y="55.0" width="175" height="90" rx="10" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="105.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Retrieval Precision</text><text x="105.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">Are chunks actually</text><text x="105.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">relevant?</text><rect x="210.5" y="58.0" width="175" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="207.5" y="55.0" width="175" height="90" rx="10" fill="#e8d5f5" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="295.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Answer Faithfulness</text><text x="295.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">Answer grounded</text><text x="295.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#9b59b6">in retrieved text?</text><rect x="400.5" y="58.0" width="175" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="397.5" y="55.0" width="175" height="90" rx="10" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="485.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Token Cost</text><text x="485.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">Prompt+completion</text><text x="485.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">tokens x price</text><rect x="563.0" y="58.0" width="120" height="90" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="560.0" y="55.0" width="120" height="90" rx="10" fill="#d5f5e3" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="620.0" y="83.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Latency</text><text x="620.0" y="100.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">Retrieval+synth</text><text x="620.0" y="117.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#27ae60">P50/P95/P99</text></svg></div></p>
 
-<p><strong>Retrieval precision:</strong> Check <code>response.source_nodes</code>. Are the retrieved chunks actually about the query topic? If top scores are consistently below 0.7, your embed model or chunk size needs tuning.</p>
+<p><strong>Retrieval precision:</strong> Check <code>response.<mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">source_nodes</mark></code>. Are the retrieved chunks actually about the query topic? If top scores are consistently below 0.7, your embed model or chunk size needs tuning.</p>
 
-<p><strong>Answer faithfulness:</strong> Does the answer use language from the source chunks? LLM hallucinations appear as claims in the answer not supported by any retrieved chunk. Tools like <code>DeepEval</code> and <code>Ragas</code> automate this check.</p>
+<p><strong>Answer <mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">faithfulness</mark>:</strong> Does the answer use language from the source chunks? LLM hallucinations appear as claims in the answer not supported by any retrieved chunk. Tools like <code>DeepEval</code> and <code><mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">Ragas</mark></code> automate this check.</p>
 
 <p><strong>Token cost:</strong> <code>prompt_llm_token_count</code> × model price. A <code>COMPACT</code> synthesizer with <code>similarity_top_k=5</code> on <code>gpt-4o-mini</code> should cost well under $0.001 per query.</p>
 
@@ -348,10 +446,13 @@ print(f&quot;  Embed:      {counter.total_embedding_token_count} tokens&quot;)</
 <h2>Day One vs Production</h2>
 
 <table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
-<tr><td>Handler</td><td><code>LlamaDebugHandler</code> — prints to stdout</td><td><code>StructuredLogHandler</code> → JSON → Datadog / Grafana</td></tr>
-<tr><td>Token tracking</td><td>None</td><td><code>TokenCountingHandler</code> on every query</td></tr>
+<tr><td>Handler</td><td><code><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">LlamaDebugHandler</mark></code> — prints to stdout</td><td><code>StructuredLogHandler</code> → JSON → Datadog / Grafana</td></tr>
+<tr><td>Token tracking</td><td>None</td><td><code><mark class="ic ic-q6" style="background:#dcfce7;color:#15803d;text-decoration-color:#15803d44" data-tip="Asked in interviews at Google, Meta, Cohere, Hugging Face
+Q6: How do you evaluate a RAG pipeline?">TokenCountingHandler</mark></code> on every query</td></tr>
 <tr><td>Latency tracking</td><td>Read from debug trace manually</td><td>Emit <code>retrieve_ms</code> + <code>synthesize_ms</code> as metrics</td></tr>
-<tr><td>Retrieval audit</td><td>Inspect <code>response.source_nodes</code> manually</td><td>Log <code>top_score</code>, <code>bottom_score</code>, <code>num_nodes</code> per query</td></tr>
+<tr><td>Retrieval audit</td><td>Inspect <code>response.<mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">source_nodes</mark></code> manually</td><td>Log <code>top_score</code>, <code>bottom_score</code>, <code>num_nodes</code> per query</td></tr>
 <tr><td>Error tracking</td><td>Exception stack trace</td><td>Structured error log with query context</td></tr>
 <tr><td>Sampling</td><td>All queries</td><td>100% logging + sampled deep traces</td></tr>
 <tr><td>Feedback loop</td><td>None</td><td>Thumbs up/down → labelled eval set</td></tr>

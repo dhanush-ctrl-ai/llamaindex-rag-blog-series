@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,17 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 7: The Query Engine — From Question to Answer</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q1" style="color:#6d28d9;background:#ede9fe;border-color:#6d28d980" title="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">📋 Q1 · System design</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q4" style="color:#b45309;background:#fef3c7;border-color:#b4530980" title="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">📋 Q4 · Debugging</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q5" style="color:#be185d;background:#fce7f3;border-color:#be185d80" title="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">📋 Q5 · Hybrid search</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q8" style="color:#0e7490;background:#cffafe;border-color:#0e749080" title="Asked in interviews at Cohere, Microsoft, Perplexity
+Q8: How does re-ranking improve retrieval quality?">📋 Q8 · Re-ranking</a>
+</div>
 
 <hr>
 
@@ -121,7 +217,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <h2>The three-stage architecture</h2>
 
-<p><code>RetrieverQueryEngine</code> is three lines of code that call three separate systems:</p>
+<p><code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">RetrieverQueryEngine</mark></code> is three lines of code that call three separate systems:</p>
 
 <pre><code class="language-python"># query_engine/retriever_query_engine.py
 def _query(self, query_bundle: QueryBundle) -&gt; RESPONSE_TYPE:
@@ -154,7 +251,8 @@ def _query(self, query_bundle: QueryBundle) -&gt; RESPONSE_TYPE:
     ) -&gt; List[NodeWithScore]:
         ...</code></pre>
 
-<h3><code>SimilarityPostprocessor</code> — the quality gate</h3>
+<h3><code><mark class="ic ic-q8" style="background:#cffafe;color:#0e7490;text-decoration-color:#0e749044" data-tip="Asked in interviews at Cohere, Microsoft, Perplexity
+Q8: How does re-ranking improve retrieval quality?">SimilarityPostprocessor</mark></code> — the quality gate</h3>
 
 <p>Drops any node below a similarity cutoff. This prevents low-confidence chunks from polluting the LLM prompt with noise.</p>
 
@@ -168,7 +266,8 @@ engine = index.as_query_engine(
 
 <p>If your top-10 retrieval returns scores like <code>[0.91, 0.88, 0.84, 0.71, 0.68, ...]</code>, the cutoff trims the list to the 3 high-confidence chunks. The LLM works with less but better context.</p>
 
-<h3><code>LLMRerank</code> — the quality upgrade</h3>
+<h3><code><mark class="ic ic-q8" style="background:#cffafe;color:#0e7490;text-decoration-color:#0e749044" data-tip="Asked in interviews at Cohere, Microsoft, Perplexity
+Q8: How does re-ranking improve retrieval quality?">LLMRerank</mark></code> — the quality upgrade</h3>
 
 <p>Sends the retrieved chunks to the LLM and asks it to re-rank them by relevance to the query. More expensive (one extra LLM call) but significantly better answers for ambiguous or complex queries.</p>
 
@@ -263,7 +362,8 @@ response.response      # &quot;To roll back, run: kubectl rollout undo deploymen
 response.source_nodes  # [NodeWithScore(node=..., score=0.994), ...]
 response.metadata      # {&quot;node_id&quot;: {&quot;file_name&quot;: &quot;...&quot;, ...}}</code></pre>
 
-<p><code>source_nodes</code> is the citation layer. Every answer carries the exact chunks that produced it. You can build a UI that shows the answer with "Source: deployment-guide.txt, paragraph 3" without any extra work.</p>
+<p><code><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">source_nodes</mark></code> is the citation layer. Every answer carries the exact chunks that produced it. You can build a UI that shows the answer with "Source: deployment-guide.txt, paragraph 3" without any extra work.</p>
 
 <hr>
 
@@ -343,7 +443,8 @@ listing = accumulate_engine.query(&quot;List every CLI command in the deployment
 
 <p>At production scale, two things change in the query engine:</p>
 
-<p><strong>Swap LLMRerank in for high-stakes queries.</strong> The extra LLM call costs 200ms but improves answer quality significantly for ambiguous questions. Gate it behind query complexity detection:</p>
+<p><strong>Swap <mark class="ic ic-q8" style="background:#cffafe;color:#0e7490;text-decoration-color:#0e749044" data-tip="Asked in interviews at Cohere, Microsoft, Perplexity
+Q8: How does re-ranking improve retrieval quality?">LLMRerank</mark> in for high-stakes queries.</strong> The extra LLM call costs 200ms but improves answer quality significantly for ambiguous questions. Gate it behind query complexity detection:</p>
 
 <pre><code class="language-python">from llama_index.core.postprocessor import LLMRerank, SimilarityPostprocessor
 
@@ -377,20 +478,25 @@ responses = await asyncio.gather(*[engine.aquery(q) for q in queries])</code></p
 
 <table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
 <tr><td><code>similarity_top_k</code></td><td>2 (default)</td><td>5–15 based on query type</td></tr>
-<tr><td>Postprocessors</td><td>None</td><td><code>SimilarityPostprocessor</code> at minimum</td></tr>
-<tr><td>Reranking</td><td>None</td><td><code>LLMRerank</code> for complex queries</td></tr>
+<tr><td>Postprocessors</td><td>None</td><td><code><mark class="ic ic-q8" style="background:#cffafe;color:#0e7490;text-decoration-color:#0e749044" data-tip="Asked in interviews at Cohere, Microsoft, Perplexity
+Q8: How does re-ranking improve retrieval quality?">SimilarityPostprocessor</mark></code> at minimum</td></tr>
+<tr><td>Reranking</td><td>None</td><td><code><mark class="ic ic-q8" style="background:#cffafe;color:#0e7490;text-decoration-color:#0e749044" data-tip="Asked in interviews at Cohere, Microsoft, Perplexity
+Q8: How does re-ranking improve retrieval quality?">LLMRerank</mark></code> for complex queries</td></tr>
 <tr><td>Synthesis mode</td><td>COMPACT</td><td>COMPACT default, REFINE for complex</td></tr>
 <tr><td>Streaming</td><td>No</td><td><code>engine.query()</code> → <code>engine.stream_query()</code></td></tr>
 <tr><td>Async</td><td>Sync only</td><td><code>engine.aquery()</code> for concurrency</td></tr>
 <tr><td>Prompt template</td><td>Default</td><td>Custom template with company context</td></tr>
-<tr><td>Observability</td><td>None</td><td><code>CallbackManager</code> + tracing</td></tr>
+<tr><td>Observability</td><td>None</td><td><code><mark class="ic ic-q4" style="background:#fef3c7;color:#b45309;text-decoration-color:#b4530944" data-tip="Asked in interviews at Amazon, Microsoft, Cohere, Scale AI
+Q4: Debug a RAG system returning wrong answers">CallbackManager</mark></code> + tracing</td></tr>
 </tbody></table>
 
 <hr>
 
 <h2>What's next</h2>
 
-<p>In Chapter 8 we step back and look at the retriever layer in depth. The default <code>VectorIndexRetriever</code> only handles semantic queries. When an engineer searches for "kubectl rollout undo v1.2.4" — an exact string — vector similarity fails. We cover <code>BM25Retriever</code>, <code>RouterRetriever</code>, <code>QueryFusionRetriever</code>, and the graph-walking retrievers that follow <code>PREV</code>/<code>NEXT</code>/<code>PARENT</code> relationships.</p>
+<p>In Chapter 8 we step back and look at the retriever layer in depth. The default <code>VectorIndexRetriever</code> only handles semantic queries. When an engineer searches for "kubectl rollout undo v1.2.4" — an exact string — vector similarity fails. We cover <code><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25Retriever</mark></code>, <code>RouterRetriever</code>, <code><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">QueryFusionRetriever</mark></code>, and the graph-walking retrievers that follow <code>PREV</code>/<code>NEXT</code>/<code>PARENT</code> relationships.</p>
 
   </div>
   <nav class="chapter-nav"><a class="ch-nav-btn ch-nav-prev" href="chapter-06-how-search-actually-works.html"><div class="nav-dir">← Previous</div>How Search Actually Works — Cosine Similarity from Scratch</a><a class="ch-nav-btn ch-nav-next" href="chapter-08-choosing-the-right-retriever.html"><div class="nav-dir">Next →</div>Choosing the Right Retriever</a></nav>

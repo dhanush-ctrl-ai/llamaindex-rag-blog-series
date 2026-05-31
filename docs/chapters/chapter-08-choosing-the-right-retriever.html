@@ -90,6 +90,91 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
   nav{padding:0 20px}.page-wrap{padding:40px 20px 60px}
   .chapter-nav{flex-direction:column}.ch-nav-btn{max-width:100%}}
 </style>
+<style id="ic-styles">
+/* ── Interview concept marks ── */
+mark.ic{
+  font-style:normal;
+  border-radius:4px;
+  padding:1px 5px;
+  cursor:help;
+  position:relative;
+  display:inline;
+  font-family:inherit;
+}
+/* tooltip */
+mark.ic::after{
+  content:attr(data-tip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#18181b;
+  color:#f4f4f5;
+  font-size:12px;
+  font-family:'Inter',sans-serif;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre;
+  padding:7px 12px;
+  border-radius:8px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  text-align:left;
+}
+mark.ic::before{
+  content:"";
+  position:absolute;
+  bottom:calc(100% + 3px);
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#18181b;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  z-index:500;
+}
+mark.ic:hover::after,
+mark.ic:hover::before{opacity:1}
+
+/* ── Pill bar ── */
+.ic-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:12px 0 22px;
+  border-bottom:1.5px solid var(--border,#e2e2da);
+  margin-bottom:30px;
+}
+.ic-bar-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted,#888);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.ic-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding:4px 11px;
+  border-radius:20px;
+  border:1.5px solid;
+  text-decoration:none;
+  transition:opacity .14s,transform .1s;
+  line-height:1.4;
+}
+.ic-pill:hover{opacity:.72;transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <nav>
@@ -104,6 +189,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
     <h1>Chapter 8: Choosing the Right Retriever</h1>
   </header>
   <div class="content">
+<div class="ic-bar">
+  <span class="ic-bar-label">Interview topics</span>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q1" style="color:#6d28d9;background:#ede9fe;border-color:#6d28d980" title="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">📋 Q1 · System design</a>
+  <a class="ic-pill" href="chapter-12-rag-interview-questions.html#q5" style="color:#be185d;background:#fce7f3;border-color:#be185d80" title="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">📋 Q5 · Hybrid search</a>
+</div>
 
 <hr>
 
@@ -143,13 +235,15 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 <p>Each index type ships with its own default retriever strategy.</p>
 
 <table><thead><tr><th>Index</th><th>Default Retriever</th><th>Strategy</th></tr></thead><tbody>
-<tr><td><code>VectorStoreIndex</code></td><td><code>VectorIndexRetriever</code></td><td>Cosine similarity over embeddings</td></tr>
+<tr><td><code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">VectorStoreIndex</mark></code></td><td><code>VectorIndexRetriever</code></td><td>Cosine similarity over embeddings</td></tr>
 <tr><td><code>SummaryIndex</code></td><td><code>SummaryIndexLLMRetriever</code></td><td>LLM reads all nodes, picks relevant</td></tr>
 <tr><td><code>KeywordTableIndex</code></td><td><code>KeywordTableSimpleRetriever</code></td><td>Keyword extraction + exact match</td></tr>
 <tr><td><code>DocumentSummaryIndex</code></td><td><code>DocumentSummaryIndexLLMRetriever</code></td><td>Match query to per-doc summaries</td></tr>
 </tbody></table>
 
-<p>The key insight: <strong>the retriever is not the index</strong>. The index is built once at ingestion time. The retriever is a query-time strategy for searching it. A <code>VectorStoreIndex</code> can even be searched with a keyword-based strategy if needed.</p>
+<p>The key insight: <strong>the retriever is not the index</strong>. The index is built once at ingestion time. The retriever is a query-time strategy for searching it. A <code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">VectorStoreIndex</mark></code> can even be searched with a keyword-based strategy if needed.</p>
 
 <h3><code>VectorIndexRetriever</code> — the default</h3>
 
@@ -166,9 +260,11 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,2.9rem);
 
 <hr>
 
-<h2>Category 2: BM25Retriever — keyword search</h2>
+<h2>Category 2: <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25Retriever</mark> — keyword search</h2>
 
-<p>BM25 (Best Match 25) is the algorithm that powers Elasticsearch, Solr, and most classic search engines. It scores documents by term frequency and inverse document frequency — pure statistics, no embeddings.</p>
+<p><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark> (Best Match 25) is the algorithm that powers Elasticsearch, Solr, and most classic search engines. It scores documents by term frequency and inverse document frequency — pure statistics, no embeddings.</p>
 
 <pre><code class="language-python">from llama_index.retrievers.bm25 import BM25Retriever
 
@@ -180,9 +276,13 @@ bm25_retriever = BM25Retriever.from_defaults(
 
 nodes = bm25_retriever.retrieve(&quot;kubectl rollout undo v1.24.2&quot;)</code></pre>
 
-<p>When BM25 wins: exact product codes (<code>SKU-4421-B</code>), CLI commands (<code>kubectl rollout undo</code>), version numbers (<code>Python 3.11</code>), proper names, legal citation numbers. These strings carry almost no semantic signal — a vector embedding of "kubectl v1.24.2" is not meaningfully close to anything. BM25 does exact token matching.</p>
+<p>When <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark> wins: exact product codes (<code>SKU-4421-B</code>), CLI commands (<code>kubectl rollout undo</code>), version numbers (<code>Python 3.11</code>), proper names, legal citation numbers. These strings carry almost no semantic signal — a vector embedding of "kubectl v1.24.2" is not meaningfully close to anything. <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark> does exact token matching.</p>
 
-<p>When BM25 loses: paraphrased questions, synonyms, conceptual queries. "What is the return window?" does not match "refund period is 30 days" with BM25.</p>
+<p>When <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark> loses: paraphrased questions, synonyms, conceptual queries. "What is the return window?" does not match "refund period is 30 days" with <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark>.</p>
 
 <p><div class="diagram-wrap"><svg viewBox="-20 -20 720 220" xmlns="http://www.w3.org/2000/svg"><title>Vector vs BM25</title><rect x="15" y="15" width="300" height="160" rx="12" fill="#d6eaf8" stroke="#2980b9" stroke-width="1.5" stroke-dasharray="7 4"/><text x="29" y="33" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#2980b9">Vector Search wins</text><rect x="48.0" y="51.0" width="240" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="45.0" y="48.0" width="240" height="44" rx="10" fill="#fff" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165.0" y="70.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#2980b9">What is the return policy?</text><rect x="48.0" y="114.0" width="240" height="34" rx="8" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="45.0" y="111.0" width="240" height="34" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="165.0" y="128.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#2980b9">Matches: refund terms and conditions</text><line x1="165.0" y1="114.0" x2="165.0" y2="94.0" stroke="#2980b9" stroke-width="2"  stroke-linecap="round"/><polygon points="170.0,105.0 165.0,94.0 160.0,105.0" fill="#2980b9" stroke="#2980b9" stroke-width="1" stroke-linejoin="round"/><rect x="365" y="15" width="300" height="160" rx="12" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="7 4"/><text x="379" y="33" font-family:'Caveat',cursive;font-weight:600; font-size="13" font-weight="700" fill="#e67e22">BM25 wins</text><rect x="398.0" y="51.0" width="240" height="44" rx="10" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="395.0" y="48.0" width="240" height="44" rx="10" fill="#fff" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515.0" y="70.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="12" font-weight="600" fill="#e67e22">kubectl rollout undo v1.24.2</text><rect x="398.0" y="114.0" width="240" height="34" rx="8" fill="rgba(0,0,0,0.07)" stroke="none"/><rect x="395.0" y="111.0" width="240" height="34" rx="8" fill="#fef9e7" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="515.0" y="128.0" text-anchor="middle" dominant-baseline="middle" font-family:'Caveat',cursive;font-weight:600; font-size="11" font-weight="600" fill="#e67e22">Matches: kubectl rollout undo v1.24.2</text><line x1="515.0" y1="114.0" x2="515.0" y2="94.0" stroke="#e67e22" stroke-width="2"  stroke-linecap="round"/><polygon points="520.0,105.0 515.0,94.0 510.0,105.0" fill="#e67e22" stroke="#e67e22" stroke-width="1" stroke-linejoin="round"/></svg></div></p>
 
@@ -218,9 +318,11 @@ router = RouterRetriever.from_defaults(
 
 <p>Cost: one extra LLM call per query for routing. Latency: +200–400ms. Worth it when your corpus has genuinely mixed query types.</p>
 
-<h3><code>QueryFusionRetriever</code> — run multiple, fuse scores</h3>
+<h3><code><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">QueryFusionRetriever</mark></code> — run multiple, fuse scores</h3>
 
-<p>Runs multiple retrievers in parallel, merges results using Reciprocal Rank Fusion (RRF). Also generates multiple rewritten versions of the query to improve recall.</p>
+<p>Runs multiple retrievers in parallel, merges results using <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">Reciprocal Rank Fusion</mark> (RRF). Also generates multiple rewritten versions of the query to improve recall.</p>
 
 <pre><code class="language-python">from llama_index.core.retrievers import QueryFusionRetriever
 
@@ -330,9 +432,11 @@ for n in hybrid.retrieve(query):
 
 <table><thead><tr><th>Retriever</th><th>Speed</th><th>Accuracy</th><th>Extra LLM?</th><th>Best for</th></tr></thead><tbody>
 <tr><td><code>VectorIndexRetriever</code></td><td>Fast</td><td>Semantic</td><td>No</td><td>Default, conceptual</td></tr>
-<tr><td><code>BM25Retriever</code></td><td>Fastest</td><td>Keyword-exact</td><td>No</td><td>Codes, names, commands</td></tr>
+<tr><td><code><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25Retriever</mark></code></td><td>Fastest</td><td>Keyword-exact</td><td>No</td><td>Codes, names, commands</td></tr>
 <tr><td><code>RouterRetriever</code></td><td>Slow</td><td>Best adaptive</td><td>Yes (routing)</td><td>Known mixed query types</td></tr>
-<tr><td><code>QueryFusionRetriever</code></td><td>Medium</td><td>Very good</td><td>Yes (rewriting)</td><td>Production default</td></tr>
+<tr><td><code><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">QueryFusionRetriever</mark></code></td><td>Medium</td><td>Very good</td><td>Yes (rewriting)</td><td>Production default</td></tr>
 <tr><td><code>RecursiveRetriever</code></td><td>Medium</td><td>Context-rich</td><td>No</td><td>Hierarchical docs</td></tr>
 <tr><td><code>AutoMergingRetriever</code></td><td>Medium</td><td>Adaptive granularity</td><td>No</td><td>Hierarchical chunking</td></tr>
 </tbody></table>
@@ -346,12 +450,16 @@ for n in hybrid.retrieve(query):
 <h2>Day One vs Production</h2>
 
 <table><thead><tr><th>Concern</th><th>Day One</th><th>Production</th></tr></thead><tbody>
-<tr><td>Retriever</td><td><code>VectorIndexRetriever</code>, top_k=2</td><td><code>QueryFusionRetriever</code>, top_k=10</td></tr>
-<tr><td>Search type</td><td>Semantic only</td><td>Hybrid: vector + BM25</td></tr>
+<tr><td>Retriever</td><td><code>VectorIndexRetriever</code>, top_k=2</td><td><code><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">QueryFusionRetriever</mark></code>, top_k=10</td></tr>
+<tr><td>Search type</td><td>Semantic only</td><td>Hybrid: vector + <mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">BM25</mark></td></tr>
 <tr><td>Query rewriting</td><td>None</td><td>LLM generates 4 variants</td></tr>
-<tr><td>Fusion</td><td>None</td><td>Reciprocal Rank Fusion</td></tr>
+<tr><td>Fusion</td><td>None</td><td><mark class="ic ic-q5" style="background:#fce7f3;color:#be185d;text-decoration-color:#be185d44" data-tip="Asked in interviews at Elastic, OpenAI, Weaviate, Databricks
+Q5: Hybrid search — combining BM25 with dense vectors">Reciprocal Rank Fusion</mark></td></tr>
 <tr><td>Hierarchical</td><td>Flat chunks</td><td><code>AutoMergingRetriever</code></td></tr>
-<tr><td>Index type</td><td><code>VectorStoreIndex</code> only</td><td>Multiple indexes per domain</td></tr>
+<tr><td>Index type</td><td><code><mark class="ic ic-q1" style="background:#ede9fe;color:#6d28d9;text-decoration-color:#6d28d944" data-tip="Asked in interviews at Google, Meta, Amazon, Microsoft, Cohere
+Q1: Design a RAG system end-to-end">VectorStoreIndex</mark></code> only</td><td>Multiple indexes per domain</td></tr>
 <tr><td>Routing</td><td>None</td><td><code>RouterRetriever</code> for mixed corpora</td></tr>
 <tr><td>Latency</td><td>Fast, single retrieval</td><td>Medium — parallel async retrieval</td></tr>
 </tbody></table>
